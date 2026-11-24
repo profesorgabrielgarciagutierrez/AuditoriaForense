@@ -1,0 +1,1371 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoría Forense · Semana 03</title>
+<style>
+/* ---------- 1. Variables y base ---------- */
+:root{
+  --azul:#003366; --cielo:#87CEEB; --claro:#E8F4FD; --texto:#1b1b1b; --gris:#4a5561;
+  --ok:#1e6b34; --ok-fondo:#e6f4ea; --no:#8a1c1c; --no-fondo:#fbeaea; --blanco:#fff;
+  --serif:"Lora", Georgia, "Times New Roman", serif;
+  --sans:"Source Sans 3", "Segoe UI", Arial, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:#f7f9fb;color:var(--texto);font-family:var(--sans);font-size:17px;line-height:1.6;overflow-x:hidden}
+header{background:#003366;color:#fff;padding:14px 16px}
+header h1{font-family:var(--serif);font-size:1.35rem;margin:0;font-weight:700}
+header p{margin:4px 0 0;font-size:.9rem;opacity:.92}
+nav{background:var(--cielo);color:#000;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;position:sticky;top:0;z-index:5}
+nav button{background:transparent;border:0;color:#000;font:inherit;font-weight:600;padding:12px 14px;cursor:pointer;min-height:44px}
+nav button:focus-visible{outline:3px solid #003366;outline-offset:-3px}
+nav button[aria-selected="true"]{background:#fff;color:#003366;font-weight:700}
+main{padding:16px;max-width:860px;margin:0 auto}
+section.pestana{display:none}
+section.pestana.activa{display:block}
+h2{font-family:var(--serif);color:var(--azul);font-size:1.5rem;margin:.4em 0 .5em;line-height:1.25}
+h3{font-family:var(--serif);color:var(--azul);font-size:1.2rem;margin:1.3em 0 .4em}
+h4{font-family:var(--sans);color:var(--azul);font-size:1.02rem;margin:1em 0 .3em;font-weight:700}
+p{margin:.5em 0}
+.meta{font-size:.92rem;color:var(--gris);margin-bottom:.8em}
+.distribucion{font-size:.95rem;background:#fff;border:1px solid #d6e2ec;border-radius:6px;padding:10px 12px}
+.distribucion li{margin:.1em 0}
+
+/* ---------- 2. Bloques de contenido ---------- */
+.antes{background:#fff;border-left:6px solid var(--cielo);border-radius:6px;padding:12px 14px;margin:14px 0;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.concepto{background:#fff;border-left:6px solid var(--azul);border-radius:6px;padding:12px 14px;margin:14px 0;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.ejemplo{background:var(--claro);border-radius:6px;padding:10px 12px;margin:10px 0}
+.error{background:var(--no-fondo);border-left:6px solid var(--no);border-radius:6px;padding:10px 12px;margin:12px 0}
+.origen{font-size:.95rem;color:var(--gris);border-top:1px dashed #b7c7d5;padding-top:6px;margin-top:10px}
+.calculo{background:#fff;border:1px solid #c5d6e4;border-radius:6px;padding:10px 12px;margin:12px 0}
+.calculo .formula{font-weight:700;color:var(--azul)}
+.entender{background:#fffbea;border-left:6px solid #c9a227;border-radius:6px;padding:10px 12px;margin:12px 0}
+.nota{background:#f1f5f9;border-radius:6px;padding:10px 12px;margin:12px 0;font-size:.97rem}
+.ejercicio{background:#fff;border:1px solid #c5d6e4;border-radius:8px;padding:12px 14px;margin:16px 0}
+.ejercicio .tiempo{font-size:.9rem;color:var(--gris)}
+.insignia{display:inline-block;font-size:.8rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--azul);color:#fff;margin-right:6px}
+.insignia.analisis{background:#5a3e8a}
+
+/* ---------- 3. Tablas ---------- */
+.tabla-wrap{overflow-x:auto;margin:12px 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:480px;font-size:.95rem;background:#fff}
+caption{caption-side:top;text-align:left;font-weight:700;color:var(--azul);padding:6px 0;font-family:var(--serif)}
+th,td{border:1px solid #c5d6e4;padding:6px 8px;vertical-align:top;text-align:left}
+th{background:var(--azul);color:#fff}
+
+/* ---------- 4. Soluciones desplegables ---------- */
+details{background:#fff;border:1px solid #9fb8cc;border-radius:6px;margin:10px 0;padding:8px 12px}
+summary{cursor:pointer;font-weight:700;color:var(--azul);min-height:32px}
+summary:focus-visible{outline:3px solid var(--azul)}
+details > div{margin-top:8px}
+
+/* ---------- 5. Evaluación ---------- */
+.marcador{position:sticky;top:44px;background:#fff;border:2px solid var(--azul);border-radius:8px;padding:10px 12px;margin:12px 0;z-index:4}
+.marcador .fila{display:flex;flex-wrap:wrap;gap:6px 16px;font-weight:600}
+.barra{height:12px;background:#dbe6ef;border-radius:999px;overflow:hidden;margin-top:8px}
+.barra > div{height:100%;width:0;background:var(--azul);transition:width .3s}
+.pregunta{background:#fff;border:1px solid #c5d6e4;border-radius:8px;padding:12px 14px;margin:12px 0}
+.pregunta .enun{font-weight:600;margin:6px 0 8px}
+.opciones{display:grid;gap:6px}
+.opcion{display:flex;gap:8px;align-items:flex-start;border:1px solid #9fb8cc;border-radius:6px;padding:8px 10px;background:#fff;cursor:pointer;min-height:44px}
+.opcion input{margin-top:4px;width:18px;height:18px;flex:0 0 auto}
+.opcion:focus-within{outline:3px solid var(--azul);outline-offset:1px}
+.opcion.correcta{background:var(--ok-fondo);border-color:var(--ok)}
+.opcion.incorrecta{background:var(--no-fondo);border-color:var(--no)}
+.retro{margin-top:8px;padding:8px 10px;border-radius:6px;font-size:.97rem;display:none}
+.retro.ok{display:block;background:var(--ok-fondo);color:#123d20}
+.retro.no{display:block;background:var(--no-fondo);color:#4d1010}
+.final{margin:14px 0;padding:12px 14px;border-radius:8px;background:#fff;border:2px solid var(--azul);display:none}
+.final.visible{display:block}
+.botones{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.botones button{font:inherit;font-weight:700;background:var(--azul);color:#fff;border:0;border-radius:6px;padding:10px 14px;min-height:44px;cursor:pointer}
+.botones button.secundario{background:#fff;color:var(--azul);border:2px solid var(--azul)}
+.botones button:focus-visible{outline:3px solid #000;outline-offset:2px}
+.aviso-practica{font-size:.92rem;color:var(--gris)}
+
+/* ---------- 6. Reflexión, IA y bibliografía ---------- */
+.refl{background:#fff;border-radius:8px;padding:12px 14px;margin:14px 0;border:1px solid #c5d6e4}
+.refl .pregunta-r{font-weight:700;color:var(--azul)}
+.ej-ia ol li{margin:.3em 0}
+.bib p{padding-left:2em;text-indent:-2em;margin:.6em 0}
+.bib-nota{background:#fffbea;border-left:6px solid #c9a227;padding:10px 12px;border-radius:6px}
+
+footer{font-size:.85rem;color:var(--gris);text-align:center;padding:16px}
+@media (min-width:700px){ body{font-size:18px} }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Auditoría Forense · Semana 03</h1>
+  <p>Unidad 1 · Delitos contra el Estado, defraudación tributaria, lavado de activos y prevención</p>
+</header>
+
+<nav role="tablist" aria-label="Pestañas de la semana">
+  <button role="tab" data-p="p0" aria-selected="true">Repaso</button>
+  <button role="tab" data-p="p1" aria-selected="false">Sesión 01</button>
+  <button role="tab" data-p="p2" aria-selected="false">Evaluación 01</button>
+  <button role="tab" data-p="p3" aria-selected="false">Sesión 02</button>
+  <button role="tab" data-p="p4" aria-selected="false">Evaluación 02</button>
+  <button role="tab" data-p="p5" aria-selected="false">Reflexión</button>
+  <button role="tab" data-p="p6" aria-selected="false">Actividad con IA</button>
+  <button role="tab" data-p="p7" aria-selected="false">Bibliografía</button>
+</nav>
+
+<main>
+
+<!-- ============ PESTAÑA 0 · REPASO ============ -->
+<section id="p0" class="pestana activa" role="tabpanel">
+  <h2>Repaso: las palabras que usaremos toda la semana</h2>
+  <p class="meta">Semana 03 · Unidad 1 · Repaso de la Semana 02</p>
+  <div class="antes">
+    <p>Esta semana vas a analizar situaciones en las que alguien pudo usar el dinero o los bienes de forma indebida. Para no equivocarte, necesitas separar lo que <strong>sabes</strong> de lo que solo <strong>sospechas</strong>. Ese es el hilo de todo el material.</p>
+    <p>Al terminar el repaso, podrás decir, ante cualquier dato de un caso, si se trata de un hecho, un indicio, una hipótesis o un elemento de prueba, y explicar por qué.</p>
+  </div>
+
+  <h3>Cinco palabras clave</h3>
+  <div class="concepto">
+    <p><strong>Hecho.</strong> Algo que ocurrió y que puedes comprobar con un documento, un registro o una observación verificada. Por ejemplo, una factura con fecha y firma del proveedor.</p>
+    <p><strong>Indicio.</strong> Un dato que despierta una sospecha, pero que por sí solo no demuestra nada. Por ejemplo, una compra aprobada por una sola persona.</p>
+    <p><strong>Hipótesis.</strong> Una explicación provisional que todavía debes contrastar. Por ejemplo: «el proveedor cobró por bienes que nunca entregó». Es una idea que probarás o descartarás, no una conclusión.</p>
+    <p><strong>Elemento de prueba.</strong> Un material que, además de haberse obtenido, se presenta y se valora ante el juez. Antes de eso, es solo un elemento obtenido.</p>
+    <p><strong>Tipificación preliminar.</strong> La idea provisional de qué delito podrían describir los hechos. Es un punto de partida para investigar; no es una acusación ni una declaración de culpa.</p>
+  </div>
+
+  <div class="error">
+    <p><strong>Escenario de error: confundir una señal de alerta con un fraude demostrado.</strong></p>
+    <p><strong>Quién se afecta:</strong> la persona señalada por la alerta.</p>
+    <p><strong>Qué cambia:</strong> el informe afirmaría como cierto algo que solo es una alerta que todavía hay que analizar.</p>
+    <p><strong>En qué caso:</strong> si una operación que se sale de lo habitual se describe como lavado de activos sin haber revisado su justificación.</p>
+  </div>
+  <p class="origen">Origen de los datos: no hay cifras en este repaso. El escenario es didáctico.</p>
+
+  <h3>Lo que aprenderás esta semana</h3>
+  <ol>
+    <li><strong>Sesión 01:</strong> los delitos que el COIP describe contra la eficiencia de la administración pública (peculado, enriquecimiento ilícito, cohecho y concusión), el sobreprecio en una compra pública y la defraudación tributaria.</li>
+    <li><strong>Sesión 02:</strong> el lavado de activos, sus fases en un modelo que sirve para explicarlo, el papel de la UAFE y las señales de alerta en las operaciones.</li>
+  </ol>
+  <p>Cada evaluación mide solo lo que se explica en su sesión. Si algo no aparece en el material, no te lo preguntarán.</p>
+</section>
+
+<!-- ============ PESTAÑA 1 · SESIÓN 01 ============ -->
+<section id="p1" class="pestana" role="tabpanel">
+  <h2>Sesión 01 · Delitos contra el Estado y defraudación tributaria</h2>
+  <p class="meta">Semana 03 · Sesión 01 · Unidad 1 · Tema: quién puede cometer estos delitos, cómo se reconoce cada uno, sobreprecio, defraudación tributaria y rastro contable</p>
+
+  <div class="antes">
+    <p><strong>Antes de empezar.</strong> Imagina un hospital público que compra guantes. Un funcionario recibe un viaje pagado por el proveedor, y el precio de los guantes es más alto que el del mercado. ¿Son el mismo problema? No necesariamente. Esta sesión te enseña a distinguir situaciones que se parecen, y a detectar qué dato te falta para decidir.</p>
+    <p><strong>Qué comprenderás:</strong> qué significa ser servidor público para efectos penales, qué diferencia hay entre peculado, enriquecimiento ilícito, cohecho y concusión, qué exige un sobreprecio y qué es la defraudación tributaria.</p>
+    <p><strong>Para qué te sirve:</strong> para revisar si una conducta cumple las condiciones de un delito, separar hechos de indicios e hipótesis, reconstruir el rastro contable de una operación y calcular una diferencia de precio con la base correcta.</p>
+    <p><strong>Normas que usaremos:</strong> Código Orgánico Integral Penal (COIP), artículos 278, 279, 280, 281, 294.1 y 298. Esta sesión se centra en las conductas y sus condiciones; las penas no forman parte de este tema.</p>
+  </div>
+
+  <div class="distribucion">
+    <p><strong>Cómo se reparten los 120 minutos</strong></p>
+    <ul>
+      <li>Apertura y recuerdo de lo que ya sabes: 10 minutos.</li>
+      <li>Explicación y ejemplos: 65 minutos.</li>
+      <li>Ejercicio 1, con solución explicada: 15 minutos.</li>
+      <li>Ejercicio 2, con solución explicada: 15 minutos.</li>
+      <li>Cierre y síntesis: 15 minutos.</li>
+    </ul>
+    <p class="aviso-practica">La evaluación de la sesión va después de este bloque y no tiene un tiempo fijo; te tomará lo que necesites para leer las preguntas y hacer los cálculos.</p>
+  </div>
+
+  <h3>1. Primero, pregúntate quién lo hizo</h3>
+  <div class="concepto">
+    <p>En este tema, la <strong>calidad de la persona</strong> cambia todo. Un mismo gesto puede ser una falta ética, un incumplimiento de contrato o un delito, según quién lo hace. Antes de calificar cualquier conducta, revisa si la persona tiene esa calidad, y compruébalo con un nombramiento, un contrato o un registro.</p>
+    <p>El COIP habla de <strong>servidores públicos</strong>, de las personas que actúan en virtud de una potestad estatal (es decir, que ejercen una función del Estado) y, en el peculado, también de los <strong>proveedores del Estado</strong>, que son quienes venden bienes o servicios a una institución pública.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1 (sí tiene la calidad):</strong> una persona nombrada como jefa de compras de un hospital público, que decide a qué proveedor se paga.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2 (sí tiene la calidad):</strong> un proveedor del Estado que, en su propio beneficio, se queda con bienes que la institución le entregó para un contrato.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 3 (no tiene la calidad):</strong> el gerente de una empresa privada que decide pagar a un proveedor. La decisión puede ser equivocada para su empresa, pero no es una conducta de servidor público.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: aplicar un delito de servidor público a una persona privada.</strong></p>
+      <p><strong>Quién se afecta:</strong> la persona privada que aparece en el informe.</p>
+      <p><strong>Qué cambia:</strong> la hipótesis de tipificación, que quedaría sin fundamento porque falta la calidad exigida.</p>
+      <p><strong>En qué caso:</strong> si se escribe que un gerente privado cometió peculado por haber usado fondos de su empresa.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: artículos 278 y 280 del COIP. El ejemplo 3 es un supuesto didáctico.</p></div>
+  </div>
+
+  <h3>2. Peculado y enriquecimiento ilícito</h3>
+  <div class="concepto">
+    <p><strong>Peculado (artículo 278).</strong> Es el abuso, la apropiación, la distracción o el uso arbitrario de bienes o dineros públicos que una persona tiene en su poder <em>por razón de su cargo</em>, en beneficio propio o de un tercero. La idea clave es el vínculo con el cargo: el bien llega a sus manos gracias a su función.</p>
+    <p><strong>Enriquecimiento ilícito (artículo 279).</strong> Es un aumento del patrimonio (lo que una persona tiene: dinero, bienes o deudas que le pagaron) que no tiene una justificación, obtenido por un servidor público o por quien ejerce una función estatal, debido a su cargo. Puede estar a nombre de la persona o de otra que actúa por ella. La norma aclara que también hay incremento cuando se cancelan deudas o se extinguen obligaciones.</p>
+    <p><strong>Para qué lo usas:</strong> en el peculado, para seguir el bien o el dinero hasta que sale de la institución. En el enriquecimiento, para comparar el patrimonio con los ingresos que sí se pueden justificar.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1 (peculado):</strong> un bodeguero de una entidad pública saca equipos de la bodega y los usa en su negocio particular.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2 (enriquecimiento ilícito):</strong> un funcionario con un sueldo conocido tiene bienes que no puede justificar con ingresos documentados, y los bienes están a nombre de un familiar.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 3 (no es peculado):</strong> un empleado de una empresa privada usa un equipo de la empresa para su trabajo. No hay bien público ni cargo público, así que no hay peculado.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: tomar un patrimonio alto como prueba de enriquecimiento ilícito.</strong></p>
+      <p><strong>Quién se afecta:</strong> el funcionario cuyo patrimonio se compara.</p>
+      <p><strong>Qué cambia:</strong> la conclusión sobre el origen de los bienes, que debe apoyarse en ingresos y registros verificados.</p>
+      <p><strong>En qué caso:</strong> si no se consideran sus ingresos documentados, ni una herencia o un préstamo que sí se pueda probar.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: artículos 278 y 279 del COIP. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <h3>3. Cohecho y concusión: quién ofrece, quién recibe y quién exige</h3>
+  <div class="concepto">
+    <p>Estos dos delitos se confunden con facilidad, porque ambos tienen un beneficio indebido. La diferencia está en <strong>quién empuja la situación</strong>.</p>
+    <p><strong>Cohecho (artículo 280).</strong> El servidor público <em>recibe o acepta</em> un beneficio indebido para hacer, omitir, agilitar, retardar o condicionar algo de su función. La norma también sanciona a quien <em>ofrece, da o promete</em> ese beneficio. El beneficio puede ser material (dinero, un bien) o inmaterial (una ventaja que no tiene un valor económico fácil de medir).</p>
+    <p><strong>Concusión (artículo 281).</strong> El servidor público, <em>abusando de su cargo</em>, ordena o exige una entrega indebida. Aquí quien presiona es el funcionario: el particular no ofrece nada; le exigen.</p>
+    <p><strong>Para qué lo usas:</strong> para decidir, con declaraciones y documentos, quién inició la entrega y con qué autoridad se pidió.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1 (cohecho):</strong> un proveedor ofrece un viaje a un técnico que está evaluando su oferta, y el técnico lo acepta antes de emitir su informe.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2 (concusión):</strong> un funcionario de permisos exige un pago a un comerciante para entregarle un permiso al que él ya tiene derecho.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 3 (no es ni cohecho ni concusión):</strong> un cliente regala una caja de dulces a una cajera de un banco privado, sin ningún trámite pendiente. El banco no es una institución pública y no hay un acto de función.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: calificar como concusión un ofrecimiento que partió del particular.</strong></p>
+      <p><strong>Quién se afecta:</strong> el funcionario, a quien se le atribuiría una exigencia que nunca ocurrió.</p>
+      <p><strong>Qué cambia:</strong> el tipo de delito y la responsabilidad de cada participante en el informe.</p>
+      <p><strong>En qué caso:</strong> si el informe no separa lo que dijo el particular de lo que dijo el funcionario.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: artículos 280 y 281 del COIP. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <h3>4. Sobreprecio en una compra pública (artículo 294.1)</h3>
+  <div class="concepto">
+    <p>Hay <strong>sobreprecio</strong> cuando una institución pública compra algo de forma arbitraria y paga un precio que es evidente y comprobadamente superior al precio ordinario del mercado. Para mostrarlo necesitas dos cosas: una <strong>referencia</strong> (cuánto cuesta normalmente ese bien) y una <strong>comparación</strong> (cuánto se pagó realmente).</p>
+    <p>Una aclaración importante: la Corte Constitucional, en la Resolución No. 129 (Registro Oficial Constitucional 78, 19 de septiembre de 2025), declaró inconstitucional que un informe previo de la Contraloría sea un requisito para este delito. Por eso, en este curso, el sobreprecio se demuestra con la comparación de precios, y no con ese informe.</p>
+    <p><strong>Para qué lo usas:</strong> para calcular cuánto se pagó de más frente a la referencia, y para juzgar si la referencia sirve para comparar.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1 (referencia comparable):</strong> dos cotizaciones de la misma fecha, para el mismo producto y con la misma calidad, sirven como referencia.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2 (referencia no comparable):</strong> un precio de hace cuatro años, de otra ciudad y para un producto de menor calidad no sirve para comparar.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: usar una referencia que no es comparable.</strong></p>
+      <p><strong>Quién se afecta:</strong> el proveedor y el funcionario que aprobó el precio.</p>
+      <p><strong>Qué cambia:</strong> la cifra del sobreprecio. Puede aparecer una diferencia que solo se debe a que los productos no eran iguales.</p>
+      <p><strong>En qué caso:</strong> si se compara el precio de un producto nuevo con el de uno usado, sin explicarlo.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: artículo 294.1 del COIP y la nota de la Resolución No. 129 de la Corte Constitucional. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <h3>5. Defraudación tributaria (artículo 298)</h3>
+  <div class="concepto">
+    <p>La <strong>defraudación tributaria</strong> ocurre cuando alguien engaña a la Administración Tributaria (el organismo que cobra los impuestos) para dejar de pagar, en todo o en parte, lo que realmente debía pagar. Puede hacerlo simulando, ocultando, omitiendo, falseando o engañando. El artículo 298 describe muchas formas concretas. En este curso estudiaremos cuatro:</p>
+    <ul>
+      <li>Presentar información falsa o incompleta a la administración (numeral 5).</li>
+      <li>Escribir datos falsos o incompletos en una declaración (numeral 6).</li>
+      <li>Alterar los libros o registros contables (numeral 8).</li>
+      <li>Omitir ingresos o incluir costos y gastos falsos (numeral 15).</li>
+    </ul>
+    <p><strong>Para qué lo usas:</strong> para comparar lo que se declaró con lo que muestran los registros y los documentos de respaldo, y decidir qué comprobación falta.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1 (numeral 15):</strong> una empresa registra ventas en sus libros que no aparecen en su declaración, y no hay ninguna explicación documentada.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2 (numeral 8):</strong> alguien modifica un asiento de compras para que el costo registrado sea menor.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 3 (no es defraudación por sí mismo):</strong> una declaración sustitutiva presentada a tiempo para corregir un error de digitación, con su respaldo. Corregir un error no prueba que hubo intención de engañar.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: concluir defraudación a partir de una sola diferencia.</strong></p>
+      <p><strong>Quién se afecta:</strong> la empresa, que pudo cometer un error de registro.</p>
+      <p><strong>Qué cambia:</strong> la conclusión del informe, que pasaría de un indicio a una afirmación no comprobada.</p>
+      <p><strong>En qué caso:</strong> si una diferencia de ventas se presenta como defraudación sin revisar el libro de ventas ni los depósitos.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: artículo 298 del COIP, numerales 5, 6, 8 y 15. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <h3>6. El rastro contable: cómo reconstruir una operación</h3>
+  <div class="concepto">
+    <p>El <strong>rastro contable</strong> es el conjunto de documentos, registros y asientos que te permiten seguir una operación desde su inicio hasta su registro final. Se reconstruye en orden de fechas: la solicitud, la aprobación, la recepción de los bienes, la factura, el pago y el asiento contable.</p>
+    <p>Un registro no es lo mismo que una operación realizada. Una factura registrada puede no corresponder a una entrega real. Por eso compruebas el registro con el documento original y, si es posible, con un tercero.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1 (rastro completo):</strong> una factura registrada, con su orden de compra, su acta de recepción firmada y el comprobante de pago.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2 (rastro incompleto):</strong> una factura registrada sin orden de compra y sin acta de recepción. Es un indicio que debes investigar.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: dar por hecha una operación solo porque está registrada.</strong></p>
+      <p><strong>Quién se afecta:</strong> el proveedor, cuyo cobro podría cuestionarse sin verificar si hubo entrega.</p>
+      <p><strong>Qué cambia:</strong> la reconstrucción de la operación y el hallazgo que se reporta.</p>
+      <p><strong>En qué caso:</strong> si el asiento de compra se toma como prueba de que los bienes llegaron.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: ejemplos didácticos.</p></div>
+  </div>
+
+  <h3>7. Hecho, indicio e hipótesis en un caso de sobreprecio</h3>
+  <div class="ejemplo">
+    <p><strong>Caso didáctico.</strong> Supongamos que el Hospital Demo Río Verde, una entidad pública ficticia, compra 5.000 guantes de nitrilo a Insumos Médicos Demo S.A. a $2,40 cada unidad. Como referencia, la entidad tiene tres cotizaciones de la misma fecha, para la misma calidad, que dan un precio de $1,60 por unidad. Este caso sirve para practicar la base del porcentaje y la comparabilidad de la referencia.</p>
+  </div>
+  <p>La siguiente tabla reconstruye la operación. Ordena los hechos, los documentos y el contraste, para que cada cifra tenga su origen.</p>
+  <div class="tabla-wrap">
+    <table>
+      <caption>Tabla 1. Reconstrucción de la compra del Hospital Demo Río Verde (caso didáctico)</caption>
+      <tr><th>Fecha</th><th>Operación o hecho descrito</th><th>Documento o fuente</th><th>Cuenta o recurso afectado</th><th>Importe</th><th>Resultado del contraste</th></tr>
+      <tr><td>Ene-2026</td><td>Solicitud de compra de guantes</td><td>Solicitud interna</td><td>Suministros médicos</td><td>Sin importe</td><td>Hecho: la solicitud está registrada</td></tr>
+      <tr><td>Ene-2026</td><td>Tres cotizaciones de referencia</td><td>Cotizaciones firmadas</td><td>Referencia de precio</td><td>$1,60 por unidad</td><td>Referencia comparable: misma fecha y calidad</td></tr>
+      <tr><td>Feb-2026</td><td>Contrato con Insumos Médicos Demo S.A.</td><td>Contrato</td><td>Compra de suministros</td><td>$2,40 por unidad</td><td>El precio contratado supera la referencia</td></tr>
+      <tr><td>Feb-2026</td><td>Pago de 5.000 unidades</td><td>Factura y comprobante de pago</td><td>Bancos y suministros</td><td>$12.000,00</td><td>Hecho: el pago está registrado; falta confirmar la entrega</td></tr>
+    </table>
+  </div>
+
+  <h3>Cálculo 1. ¿Cuánto se pagó de más?</h3>
+  <div class="calculo">
+    <p><strong>Por qué calculamos.</strong> Una frase como «pagaron caro» no sirve en un informe. Necesitas saber cuánto se pagó de más y en qué porcentaje, para evaluar si la diferencia es importante y para explicarla con cifras.</p>
+    <p><strong>Qué buscamos.</strong> La diferencia por unidad, la diferencia total y el porcentaje de sobreprecio. El porcentaje se calcula sobre la <strong>referencia de mercado</strong>, porque el sobreprecio se mide frente al precio ordinario.</p>
+    <p><strong>Datos.</strong> Precio pagado: $2,40 por unidad. Precio de referencia: $1,60 por unidad. Cantidad: 5.000 unidades. Estos datos vienen del caso didáctico de la sección 7.</p>
+    <p><strong>Comprobación previa.</strong> Los dos precios son por unidad, se aplican a la misma cantidad y la referencia es de la misma fecha y calidad. Por eso la comparación es válida.</p>
+    <p class="formula">Diferencia por unidad = $2,40 − $1,60 = $0,80</p>
+    <p class="formula">Diferencia total = 5.000 × $0,80 = $4.000,00</p>
+    <p class="formula">Comprobación: pagado 5.000 × $2,40 = $12.000,00; referencia 5.000 × $1,60 = $8.000,00; $12.000,00 − $8.000,00 = $4.000,00</p>
+    <p class="formula">Porcentaje de sobreprecio = $0,80 ÷ $1,60 = 0,5000 = 50,00 %</p>
+    <p><strong>Qué significa.</strong> El precio contratado supera en 50,00 % la referencia. Es una diferencia calculada, no una prueba de delito. Para afirmar un sobreprecio tendrías que revisar el proceso de contratación, la calidad del producto y si la referencia es válida.</p>
+    <div class="error">
+      <p><strong>Escenario de error: dividir entre el precio pagado.</strong></p>
+      <p><strong>Quién se afecta:</strong> quien lea el informe, que recibirá una cifra distinta.</p>
+      <p><strong>Qué cambia:</strong> el porcentaje. Si divides $0,80 entre $2,40, obtienes 33,33 %. Ese número mide qué parte del precio pagado corresponde a la diferencia, no cuánto se pagó de más frente a la referencia.</p>
+      <p><strong>En qué caso:</strong> si el informe no dice cuál es la base del porcentaje.</p>
+    </div>
+  </div>
+  <p class="origen">Origen de los datos: caso didáctico de la sección 7. El cálculo no introduce datos nuevos.</p>
+
+  <div class="ejercicio">
+    <h3>Ejercicio 1 · Separar hechos, indicios e hipótesis en una compra</h3>
+    <p class="tiempo">Tiempo estimado: 15 minutos · Trabajo individual.</p>
+    <p><strong>Qué practicas:</strong> clasificar cada afirmación como hecho, indicio o hipótesis, y justificar tu clasificación.</p>
+    <p><strong>Enunciado.</strong> En la revisión de una compra de una entidad pública ficticia, encontraste estas cuatro afirmaciones:</p>
+    <ol>
+      <li>La factura del proveedor tiene fecha de febrero de 2026 y el sello de recepción de la entidad.</li>
+      <li>El acta de recepción no está firmada por el bodeguero, aunque aparece registrada en el sistema.</li>
+      <li>El jefe de compras aprobó el contrato, y también fue quien recomendó al proveedor.</li>
+      <li>El precio pagado fue mayor que la referencia de mercado.</li>
+    </ol>
+    <p><strong>Tu tarea.</strong> Clasifica cada afirmación como hecho, indicio o hipótesis, y escribe una frase que explique tu criterio. Después propón una comprobación para la afirmación 3.</p>
+    <details>
+      <summary>Ver solución explicada</summary>
+      <div>
+        <p><strong>1. Hecho.</strong> La fecha y el sello se pueden verificar en el documento. Sirven para comprobar cuándo se hizo la operación.</p>
+        <p><strong>2. Indicio.</strong> La firma que falta es una anomalía que orienta la revisión. Puede tener una explicación (un formato distinto, una copia sin firmar). Debes revisar el original y preguntar al bodeguero.</p>
+        <p><strong>3. Indicio, con una hipótesis asociada.</strong> Que alguien aprobara y además recomendara al proveedor son hechos solo si constan por escrito. Que coincidan en la misma persona es un indicio de conflicto de interés. La hipótesis es que hubo una preferencia indebida. Para contrastarla, revisa la lista de proveedores aprobados, el proceso de selección y si la recomendación consta en un documento.</p>
+        <p><strong>4. Indicio.</strong> Es una diferencia de precio. Para hablar de sobreprecio necesitas una referencia comparable.</p>
+        <p><strong>Límite.</strong> Ninguna de las cuatro afirmaciones, por sí sola, demuestra un delito.</p>
+      </div>
+    </details>
+    <div class="entender">
+      <p><strong>Cómo entender este ejercicio.</strong> La dificultad está en la afirmación 3. Que una persona apruebe y recomiende no es un delito; es un dato que orienta una hipótesis. El error más frecuente es escribir «conflicto de interés demostrado» cuando solo hay una coincidencia de funciones.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <h3>Ejercicio 2 · Defraudación tributaria: ventas registradas y ventas declaradas</h3>
+    <p class="tiempo">Tiempo estimado: 15 minutos · Trabajo individual.</p>
+    <p><strong>Qué practicas:</strong> calcular una diferencia entre dos bases, expresarla con la base correcta e interpretarla sin concluir que hubo fraude.</p>
+    <p><strong>Enunciado.</strong> La empresa ficticia Comercial Río Dorado Demo S.A. registra en sus libros ventas por $100.000,00 durante el año. En sus declaraciones, en cambio, reportó ventas por $82.000,00. Por ahora solo tienes estas dos cifras.</p>
+    <p><strong>Tu tarea.</strong> (a) Calcula la diferencia. (b) Calcula el porcentaje sobre las ventas registradas y explica por qué esa es la base. (c) Indica qué numeral del artículo 298 podrías estudiar y qué comprobación te falta.</p>
+    <details>
+      <summary>Ver solución explicada</summary>
+      <div>
+        <p><strong>(a)</strong> $100.000,00 − $82.000,00 = $18.000,00.</p>
+        <p><strong>(b)</strong> $18.000,00 ÷ $100.000,00 = 0,1800 = 18,00 %. La base son las ventas registradas, porque la diferencia es una parte de ellas.</p>
+        <p><strong>(c)</strong> Podrías estudiar el numeral 6 (datos falsos u omitidos en una declaración) o el numeral 15 (omitir ingresos), según la causa. Te falta revisar las facturas emitidas, los depósitos bancarios, las ventas anuladas y, si existieron, las declaraciones sustitutivas.</p>
+        <p><strong>Límite.</strong> La diferencia puede deberse a un error de registro, a ventas anuladas o a un cierre de periodo. Hasta que la compruebes, es solo un indicio.</p>
+      </div>
+    </details>
+    <div class="entender">
+      <p><strong>Cómo entender este ejercicio.</strong> Si calcularas el porcentaje sobre las ventas declaradas, obtendrías 21,95 %. Es un número distinto porque cambia la base. Antes de comparar cifras, define qué mide cada una.</p>
+    </div>
+  </div>
+
+  <div class="nota">
+    <p><strong>Qué pasa con el caso de Distribuidora Costa Demo S.A.</strong> Costa Demo es una empresa privada, y ninguno de sus participantes (gerente general, contadora general, jefe de compras y bodeguero) es servidor público. Por eso los delitos contra la eficiencia de la administración pública no se aplican de forma directa a sus hechos. Lo que sí puedes revisar es el rastro contable de las compras y, si aparecieran comprobantes falsos, la defraudación tributaria. Ninguna de esas hipótesis está establecida todavía.</p>
+  </div>
+
+  <div class="antes">
+    <p><strong>Cierre.</strong> Repasa las ideas clave: la calidad de la persona define el tipo; el peculado exige un bien que está en poder de la persona por su cargo; el enriquecimiento ilícito exige un aumento sin justificación; el cohecho ofrece o acepta un beneficio, y la concusión lo exige. El sobreprecio se mide con una referencia comparable y una base clara. La defraudación tributaria se estudia con los registros, no con una sola diferencia.</p>
+  </div>
+</section>
+
+<!-- ============ PESTAÑA 2 · EVALUACIÓN 01 ============ -->
+<section id="p2" class="pestana" role="tabpanel">
+  <h2>Evaluación de la Sesión 01</h2>
+  <p class="meta">Semana 03 · Sesión 01 · Práctica</p>
+  <p class="aviso-practica">La retroalimentación aparece al elegir cada opción. Puedes cambiar tus respuestas hasta completar todas las preguntas. El puntaje es de práctica.</p>
+  <div class="marcador" id="m-e1" aria-live="polite"></div>
+  <div id="quiz-e1"></div>
+  <div class="botones">
+    <button type="button" class="secundario" data-reiniciar="e1">Reiniciar cuestionario</button>
+  </div>
+</section>
+
+<!-- ============ PESTAÑA 3 · SESIÓN 02 ============ -->
+<section id="p3" class="pestana" role="tabpanel">
+  <h2>Sesión 02 · Lavado de activos y prevención</h2>
+  <p class="meta">Semana 03 · Sesión 02 · Unidad 1 · Tema: lavado de activos, fases, prevención, UAFE y señales de alerta</p>
+
+  <div class="antes">
+    <p><strong>Antes de empezar.</strong> Imagina a una persona que recibe depósitos en efectivo de montos parecidos, en pocos días, y que después transfiere todo a terceros. ¿Ya hay lavado de activos? Todavía no se puede afirmarlo. Ese patrón es una <strong>señal de alerta</strong>: obliga a analizar, pero no prueba nada por sí solo.</p>
+    <p><strong>Qué comprenderás:</strong> qué conductas describe el COIP como lavado de activos, cómo se explican sus fases con un modelo, qué hace la UAFE, qué reportes existen (ROS, NO ROS y RESU) y qué significa una señal de alerta.</p>
+    <p><strong>Para qué te sirve:</strong> para decidir si una operación se documenta como señal de alerta, si se cierra con su justificación o si debe pasar al comité de cumplimiento. Así evitarás confundir ese proceso con una acusación.</p>
+    <p><strong>Normas que usaremos:</strong> COIP, artículo 317; Ley Orgánica de Prevención, Detección y Combate del Delito de Lavado de Activos y de la Financiación de Otros Delitos, artículos 17, 58, 62, 63, 69 y 70; y la Norma de control de la Superintendencia de Economía Popular y Solidaria (SEPS), artículos 19 y 20.</p>
+  </div>
+
+  <div class="distribucion">
+    <p><strong>Cómo se reparten los 120 minutos</strong></p>
+    <ul>
+      <li>Apertura y recuerdo de lo que ya sabes: 10 minutos.</li>
+      <li>Explicación y ejemplos: 65 minutos.</li>
+      <li>Ejercicio 1, con solución explicada: 15 minutos.</li>
+      <li>Ejercicio 2, con solución explicada: 15 minutos.</li>
+      <li>Cierre y síntesis: 15 minutos.</li>
+    </ul>
+    <p class="aviso-practica">La evaluación de la sesión va después de este bloque y no tiene un tiempo fijo.</p>
+  </div>
+
+  <h3>1. El lavado de activos: qué describe la ley</h3>
+  <div class="concepto">
+    <p>El <strong>lavado de activos</strong> consiste en tener, usar, transferir, convertir u ocultar bienes que provienen de un delito, con el propósito de hacer creer que su origen es legítimo. Los <em>activos</em> son los bienes o el dinero que tiene valor económico.</p>
+    <p>El artículo 317 del COIP enumera varias conductas. Tres son las que más usaremos: tener o utilizar activos de origen ilícito (numeral 1); ocultar, disimular o impedir conocer el verdadero origen de esos activos (numeral 2); y realizar operaciones financieras o económicas para dar apariencia de legalidad (numeral 5).</p>
+    <p>El origen de los bienes es un punto que se retomará en las unidades siguientes, cuando veas cómo se reúnen y se valoran las pruebas.</p>
+    <p><strong>Para qué lo usas:</strong> para saber qué conducta debes probar y con qué elementos, sin confundir el origen de los fondos con la operación que estás revisando.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1 (encaja en la descripción):</strong> una persona oculta, con ayuda de un tercero, quién es realmente dueño de un bien comprado con dinero de origen ilícito. Es el caso del numeral 2, si se prueba el origen ilícito.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2 (no encaja):</strong> una persona recibe su sueldo y lo deposita en su cuenta. Es una operación legítima mientras el sueldo esté documentado.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 3 (información insuficiente):</strong> una persona retira $9.000,00 en efectivo, y no sabes de dónde viene ni en qué lo usa. Antes de calificarla, debes pedir documentos.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: tratar un depósito como lavado solo por su monto.</strong></p>
+      <p><strong>Quién se afecta:</strong> la persona que depositó, cuyo dinero puede tener un origen legítimo.</p>
+      <p><strong>Qué cambia:</strong> la calificación de la operación, que pasaría de ser un hecho registrado a una conducta delictiva sin comprobar.</p>
+      <p><strong>En qué caso:</strong> si el informe concluye lavado de activos solo porque el depósito supera cierto monto.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: artículo 317 del COIP, numerales 1, 2 y 5. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <h3>2. Las fases del lavado: un modelo para explicarlo</h3>
+  <div class="concepto">
+    <p>Para describir cómo podrían moverse fondos de origen ilícito, se usa un <strong>modelo de tres fases</strong>: <strong>colocación</strong>, <strong>estratificación</strong> e <strong>integración</strong>. Es un <em>modelo explicativo</em>: sirve para ordenar lo que observas, pero no es una definición legal y no prueba por sí mismo que una operación sea ilícita. Una operación real puede no seguir las tres fases, o seguir solo una.</p>
+    <p><strong>Colocación:</strong> es el momento en que el dinero entra al sistema financiero o económico. Por ejemplo, con depósitos en efectivo.</p>
+    <p><strong>Estratificación:</strong> es la separación del dinero de su origen mediante varias operaciones. Por ejemplo, transferencias sucesivas entre cuentas.</p>
+    <p><strong>Integración:</strong> es la incorporación del dinero a la economía con apariencia de legalidad. Por ejemplo, comprar un bien o invertir en un negocio.</p>
+    <div class="tabla-wrap">
+      <table>
+        <caption>Tabla 2. Las fases del modelo, con ejemplos y sus límites</caption>
+        <tr><th>Fase</th><th>Qué busca el esquema</th><th>Ejemplo cotidiano</th><th>Límite del modelo</th></tr>
+        <tr><td>Colocación</td><td>Meter el dinero al sistema</td><td>Depósitos en efectivo en varias sucursales</td><td>Un depósito puede tener un origen legítimo</td></tr>
+        <tr><td>Estratificación</td><td>Separar el dinero de su origen</td><td>Transferencias encadenadas entre cuentas de terceros</td><td>Una transferencia no prueba por sí sola que sirva para ocultar algo</td></tr>
+        <tr><td>Integración</td><td>Dar apariencia de legalidad</td><td>Compra de un vehículo pagado con fondos de terceros</td><td>Un bien comprado no prueba el origen ilícito del dinero</td></tr>
+      </table>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: asignar una fase solo por cómo se ve la operación.</strong></p>
+      <p><strong>Quién se afecta:</strong> la persona que compró el bien, que pudo pagarlo con dinero legítimo.</p>
+      <p><strong>Qué cambia:</strong> la descripción de la operación en el informe.</p>
+      <p><strong>En qué caso:</strong> si la compra de un bien se califica como integración sin revisar de dónde salió el dinero.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: modelo explicativo de uso académico. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <h3>3. La prevención: la UAFE, los reportes y la confidencialidad</h3>
+  <div class="concepto">
+    <p>La <strong>Unidad de Análisis Financiero y Económico (UAFE)</strong> es la entidad que analiza la información financiera para detectar posibles lavados. Según el artículo 17 de la Ley de 2024, recibe los reportes de operaciones sospechosas y puede pedir información a las entidades obligadas.</p>
+    <p>Las <strong>entidades obligadas</strong> (por ejemplo, bancos y cooperativas) deben enviar reportes a la UAFE. Son tres reportes que debes distinguir:</p>
+    <ul>
+      <li><strong>ROS (reporte de operación sospechosa):</strong> comunica movimientos que se apartan del perfil de la persona y que no pudieron justificarse con documentos.</li>
+      <li><strong>NO ROS:</strong> declaración mensual en la que la entidad certifica que, tras su monitoreo, no encontró operaciones inusuales, injustificadas o sospechosas.</li>
+      <li><strong>RESU (reporte de transacciones que igualan o superan el umbral):</strong> informa las transacciones individuales o múltiples de una misma persona en un mes que llegan a USD 10.000,00 (artículo 58 de la Ley).</li>
+    </ul>
+    <p>El artículo 62 de la Ley prohíbe que las entidades y sus empleados revelen a terceros que enviaron un reporte o que una operación está siendo examinada. El artículo 63 señala que no tienen responsabilidad civil, administrativa ni penal cuando cumplen sus obligaciones y envían reportes a la UAFE.</p>
+    <div class="error">
+      <p><strong>Escenario de error: confundir un ROS con una denuncia.</strong></p>
+      <p><strong>Quién se afecta:</strong> el cliente cuyo movimiento se reportó, y que puede ser inocente.</p>
+      <p><strong>Qué cambia:</strong> lo que el informe dice sobre esa persona. Un ROS no declara culpable a nadie ni es una sentencia.</p>
+      <p><strong>En qué caso:</strong> si escribes que alguien «fue denunciado por lavado» porque su entidad envió un ROS.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: artículos 17, 58, 62 y 63 de la Ley Orgánica de Prevención, Detección y Combate del Delito de Lavado de Activos y de la Financiación de Otros Delitos (R.O. Suplemento 610, 29 de julio de 2024); artículo 20 de la Norma de control de la SEPS, que define el ROS y el NO ROS. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <h3>4. Señales de alerta y el análisis que sigue</h3>
+  <div class="concepto">
+    <p>Una <strong>señal de alerta</strong> es cualquier indicador, operación, conducta o circunstancia que se sale de lo normal y que sugiere una posible relación con el lavado. El artículo 19 de la Norma de control de la SEPS lo deja claro: la señal no significa que haya una actividad ilícita, pero obliga a la entidad a analizar más, a reunir documentos y a decidir si la señal se justifica o si debe seguir el procedimiento de reporte.</p>
+    <p><strong>Para qué lo usas:</strong> para registrar la alerta en un expediente, con el análisis que hiciste, la verificación y la evidencia que la respalda.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1 (una señal que se justifica):</strong> un socio recibe un depósito grande. Presenta la escritura de venta de un vehículo que explica el dinero, y la alerta se cierra con ese documento.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2 (una señal que hay que analizar):</strong> un socio nuevo recibe transferencias de varios países en dos días, sin relación con su actividad declarada.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 3 (no es señal por sí sola):</strong> un cliente cambia de domicilio. Puede ser algo normal. Solo sería una alerta si se combina con otros indicadores.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: cerrar una alerta sin dejar constancia de la verificación.</strong></p>
+      <p><strong>Quién se afecta:</strong> la entidad y el cliente, porque no quedará claro por qué se descartó la alerta.</p>
+      <p><strong>Qué cambia:</strong> la trazabilidad del expediente y la calidad de cualquier reporte posterior.</p>
+      <p><strong>En qué caso:</strong> si la alerta se elimina del sistema sin guardar el documento que la justificó.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: artículo 19 de la Norma de control de la SEPS. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <h3>Cálculo 2. ¿Cuándo se suman las operaciones?</h3>
+  <div class="calculo">
+    <p><strong>Por qué calculamos.</strong> Un cliente puede hacer depósitos pequeños, uno tras otro, para que ninguno llegue al umbral. Para saber si corresponde un reporte RESU, debes sumar todas las operaciones de la misma persona en el mes.</p>
+    <p><strong>Qué buscamos.</strong> Si la suma mensual llega a USD 10.000,00, aunque cada operación, por separado, sea menor.</p>
+    <p><strong>Datos.</strong> Caso didáctico: la Cooperativa Demo Alfa de Ahorro y Crédito, una entidad ficticia, registra tres depósitos en efectivo del mismo socio en un mes: $9.500,00, $9.500,00 y $9.500,00.</p>
+    <p><strong>Comprobación previa.</strong> Las tres operaciones son de la misma persona, del mismo mes y en dólares. Por eso se pueden sumar, como lo pide el artículo 58 de la Ley.</p>
+    <p class="formula">Suma del mes = $9.500,00 + $9.500,00 + $9.500,00 = $28.500,00</p>
+    <p class="formula">Comparación con el umbral: $28.500,00 es mayor que $10.000,00</p>
+    <p class="formula">Comparación de cada depósito: $9.500,00 es menor que $10.000,00</p>
+    <p><strong>Qué significa.</strong> Aunque cada depósito quede por debajo del umbral, la suma del mes sí lo supera, así que corresponde el reporte de transacciones múltiples. Pero el monto no prueba lavado: dividir operaciones para evitar el umbral es una señal de alerta que debes analizar.</p>
+    <div class="error">
+      <p><strong>Escenario de error: revisar cada operación por separado.</strong></p>
+      <p><strong>Quién se afecta:</strong> la entidad, que no enviaría el reporte que le corresponde, y el socio, si su operación se trata sin analizar su justificación.</p>
+      <p><strong>Qué cambia:</strong> el reporte RESU y el registro de la señal de alerta, que no quedarían hechos.</p>
+      <p><strong>En qué caso:</strong> si descartas los tres depósitos porque cada uno es menor a $10.000,00.</p>
+    </div>
+  </div>
+  <p class="origen">Origen de los datos: artículo 58 de la Ley de 2024. Caso didáctico de la Cooperativa Demo Alfa, entidad ficticia.</p>
+
+  <h3>5. El papel de la UAFE en un proceso penal</h3>
+  <div class="concepto">
+    <p>La UAFE puede enviar a la Fiscalía dos documentos. El <strong>informe ejecutivo</strong> se emite a pedido de la Fiscalía, dentro de una investigación en curso, y contiene información de las bases de datos de la UAFE. El <strong>Reporte de Operaciones Inusuales e Injustificadas (ROII)</strong> analiza movimientos que no tienen relación con el perfil económico de una persona, y es un documento que elabora la UAFE.</p>
+    <p>El artículo 70 de la Ley dice que el informe ejecutivo es un <strong>indicio orientador</strong>. Es decir, orienta a la autoridad sobre dónde buscar, pero no reemplaza las pruebas que deben obtenerse y valorarse en el proceso.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1:</strong> la Fiscalía pide a la UAFE un informe ejecutivo sobre un socio. Ese informe orienta la investigación, pero la autoridad todavía debe reunir sus propias pruebas.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2:</strong> un auditor privado quiere citar un ROII en su informe. Antes de hacerlo, debe comprobar quién lo elaboró y por qué medio llegó a su poder.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: presentar el informe ejecutivo como si fuera una prueba.</strong></p>
+      <p><strong>Quién se afecta:</strong> la persona mencionada, que quedaría señalada sin que se valoren pruebas propias.</p>
+      <p><strong>Qué cambia:</strong> la fuerza de la conclusión, que pasaría de ser un indicio a una afirmación probada.</p>
+      <p><strong>En qué caso:</strong> si un informe pericial cita el informe ejecutivo como si fuera un peritaje.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: artículos 17, 69 y 70 de la Ley de 2024. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <div class="ejercicio">
+    <h3>Ejercicio 1 · Clasificar una secuencia de operaciones</h3>
+    <p class="tiempo">Tiempo estimado: 15 minutos · Trabajo individual.</p>
+    <p><strong>Qué practicas:</strong> clasificar cada operación como señal de alerta, como operación que no alerta por sí sola, o como hecho que debe confirmarse; y justificar tu criterio.</p>
+    <p><strong>Enunciado.</strong> En la Cooperativa Demo Alfa, un socio cuyos ingresos declarados son bajos hace esto en una semana: (1) deposita $6.000,00 en efectivo; (2) transfiere $5.800,00 a la cuenta de un tercero; (3) paga una cuota de préstamo de $180,00 desde su cuenta; (4) al día siguiente, retira $6.000,00 en efectivo de la misma cuenta.</p>
+    <p><strong>Tu tarea.</strong> Clasifica cada operación y propone un documento que te permita justificarla o descartar la alerta.</p>
+    <details>
+      <summary>Ver solución explicada</summary>
+      <div>
+        <p><strong>(1)</strong> Hecho que debe confirmarse: el depósito es un movimiento registrado. Debes documentar de dónde viene el dinero.</p>
+        <p><strong>(2)</strong> Señal de alerta: una transferencia casi igual al depósito, a un tercero sin relación declarada, apunta a la estratificación. Documento que la justificaría: el contrato o la factura que explique el pago.</p>
+        <p><strong>(3)</strong> Operación que no alerta por sí sola: el pago de una cuota es ordinario, siempre que el préstamo esté registrado.</p>
+        <p><strong>(4)</strong> Señal de alerta: un retiro casi igual al depósito del día anterior, de la misma cuenta. Se suma a (1) y (2). Documento que la justificaría: el motivo y el respaldo del retiro.</p>
+        <p><strong>Límite.</strong> La combinación de las señales obliga a un análisis más profundo. No prueba por sí sola que haya lavado.</p>
+      </div>
+    </details>
+    <div class="entender">
+      <p><strong>Cómo entender este ejercicio.</strong> La dificultad es no mirar cada operación aislada. El patrón aparece cuando las pones juntas. El error más frecuente es descartar cada una por su monto.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <h3>Ejercicio 2 · Decidir el siguiente paso ante una alerta</h3>
+    <p class="tiempo">Tiempo estimado: 15 minutos · Trabajo individual.</p>
+    <p><strong>Qué practicas:</strong> decidir, con los criterios de la norma, si una alerta se desvirtúa, se documenta o se escala al comité.</p>
+    <p><strong>Enunciado.</strong> El oficial de cumplimiento de la Cooperativa Demo Alfa documentó la alerta del socio del ejercicio anterior. El socio presentó un contrato de compraventa de un vehículo con fecha anterior a los depósitos. Pero el vehículo aparece a nombre de otra persona, y el contrato no tiene la firma del comprador.</p>
+    <p><strong>Tu tarea.</strong> (a) Indica si el contrato, por sí solo, desvirtúa la alerta. (b) Propón dos verificaciones. (c) Explica qué corresponde hacer si ninguna verificación desvirtúa la alerta.</p>
+    <details>
+      <summary>Ver solución explicada</summary>
+      <div>
+        <p><strong>(a)</strong> No la desvirtúa. El contrato está incompleto: falta la firma del comprador, y el vehículo figura a nombre de otra persona. La alerta sigue abierta.</p>
+        <p><strong>(b)</strong> Pide el registro de propiedad del vehículo y el comprobante del pago de la compra, y confirma quién es el titular.</p>
+        <p><strong>(c)</strong> Si no se desvirtúa, el caso pasa al comité de cumplimiento, que decide si se reporta a la UAFE. Tú no decides solo ni comunicas el examen a terceros (artículo 62 de la Ley).</p>
+      </div>
+    </details>
+    <div class="entender">
+      <p><strong>Cómo entender este ejercicio.</strong> Una alerta se desvirtúa con documentos que se pueden verificar, no con explicaciones. El error más frecuente es aceptar un documento incompleto como si fuera una justificación.</p>
+    </div>
+  </div>
+
+  <div class="antes">
+    <p><strong>Cierre.</strong> Repasa las ideas clave: el lavado de activos se describe con conductas concretas del COIP, y sus fases son un modelo para explicarlo. Una señal de alerta obliga a analizar; el reporte depende de si la alerta se justifica. La UAFE recibe los reportes, y el informe ejecutivo es un indicio orientador, no una prueba.</p>
+  </div>
+</section>
+
+<!-- ============ PESTAÑA 4 · EVALUACIÓN 02 ============ -->
+<section id="p4" class="pestana" role="tabpanel">
+  <h2>Evaluación de la Sesión 02</h2>
+  <p class="meta">Semana 03 · Sesión 02 · Práctica</p>
+  <p class="aviso-practica">La retroalimentación aparece al elegir cada opción. Puedes cambiar tus respuestas hasta completar todas las preguntas. El puntaje es de práctica.</p>
+  <div class="marcador" id="m-e2" aria-live="polite"></div>
+  <div id="quiz-e2"></div>
+  <div class="botones">
+    <button type="button" class="secundario" data-reiniciar="e2">Reiniciar cuestionario</button>
+  </div>
+</section>
+
+<!-- ============ PESTAÑA 5 · REFLEXIÓN ============ -->
+<section id="p5" class="pestana" role="tabpanel">
+  <h2>Reflexión</h2>
+  <p class="meta">Semana 03 · Cuatro reflexiones. No tienen respuesta correcta ni calificación.</p>
+  <div class="refl">
+    <h4>El vuelto que no aparece</h4>
+    <p>En una tienda de barrio, la cajera se equivoca al dar el cambio y se queda con una moneda. Nadie lo nota, pero la caja no cuadra. Un error pequeño cambia la confianza de quien paga y de quien cobra.</p>
+    <p class="pregunta-r">Pregunta de reflexión: ¿qué diferencia hay entre un error pequeño y la decisión de ocultarlo? ¿Qué documento lo mostraría?</p>
+  </div>
+  <div class="refl">
+    <h4>Un favor en la oficina</h4>
+    <p>Un vecino que trabaja en la municipalidad te ofrece ayudarte con un permiso «a cambio de una atención». Tú no la aceptas, pero te preguntas si un regalo pequeño sería tan grave.</p>
+    <p class="pregunta-r">Pregunta de reflexión: ¿en qué momento un regalo deja de ser una cortesía y se convierte en un beneficio indebido para el funcionario?</p>
+  </div>
+  <div class="refl">
+    <h4>Un precio que nadie explica</h4>
+    <p>Un colega comenta que la compra de la oficina salió muy cara. Tú todavía no sabes si la comparación es válida: el producto podía ser distinto, o el precio de referencia podía ser de otro año.</p>
+    <p class="pregunta-r">Pregunta de reflexión: ¿qué prudencia necesitas antes de señalar un sobreprecio que todavía no tiene una referencia comparable?</p>
+  </div>
+  <div class="refl">
+    <h4>Un mensaje que no debía salir</h4>
+    <p>En un banco, una empleada sabe que su entidad envió un reporte sobre un cliente. Un amigo le pregunta si el cliente tiene problemas. Ella sabe que no puede decir nada.</p>
+    <p class="pregunta-r">Pregunta de reflexión: ¿por qué la confidencialidad protege a la persona reportada y también protege el proceso?</p>
+  </div>
+</section>
+
+<!-- ============ PESTAÑA 6 · ACTIVIDAD CON IA ============ -->
+<section id="p6" class="pestana" role="tabpanel">
+  <h2>Actividad con IA · Verifica una explicación sobre cohecho y concusión</h2>
+  <p class="meta">Actividad individual · Tiempo estimado: 30 minutos fuera del horario de clase</p>
+  <div class="ej-ia">
+    <div class="ejercicio">
+      <h3>Pasos</h3>
+      <ol>
+        <li><strong>Tu trabajo inicial.</strong> Antes de consultar la IA, escribe con tus palabras la diferencia entre cohecho (artículo 280) y concusión (artículo 281), con un ejemplo de cada una.</li>
+        <li><strong>Prompt para copiar:</strong> «Explica la diferencia entre cohecho y concusión en el COIP ecuatoriano. Usa solo los artículos 280 y 281, y señala quién ofrece, quién recibe y quién exige. No incluyas penas.»</li>
+        <li><strong>Contraste.</strong> Compara la respuesta con el texto de los artículos 280 y 281 del COIP y con los ejemplos de la Sesión 01.</li>
+        <li><strong>Verificación.</strong> Comprueba en el texto oficial del Código Orgánico Integral Penal, publicado en el Registro Oficial, al menos una afirmación de la respuesta.</li>
+        <li><strong>Justificación.</strong> Escribe en media página qué aceptaste, qué corregiste y qué rechazaste de la respuesta, y por qué.</li>
+      </ol>
+      <h4>Lista de autoevaluación</h4>
+      <ul>
+        <li>Identifiqué quién ofrece y quién exige en cada delito.</li>
+        <li>No acepté una pena ni una cifra sin comprobarla en el texto oficial.</li>
+        <li>Verifiqué al menos una afirmación en una fuente oficial.</li>
+        <li>Justifiqué cada cambio con el texto de la norma.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="origen">La respuesta de la IA no es una fuente normativa. La fuente es el texto oficial de la ley.</p>
+</section>
+
+<!-- ============ PESTAÑA 7 · BIBLIOGRAFÍA ============ -->
+<section id="p7" class="pestana" role="tabpanel">
+  <h2>Bibliografía</h2>
+  <p class="meta">Referencias en APA 7, en orden alfabético</p>
+  <div class="bib">
+    <p>Asamblea Nacional del Ecuador. (2014). <em>Código Orgánico Integral Penal</em>.</p>
+    <p>Asamblea Nacional del Ecuador. (2024). <em>Ley Orgánica de Prevención, Detección y Combate del Delito de Lavado de Activos y de la Financiación de Otros Delitos</em>. Registro Oficial Suplemento 610.</p>
+    <p>Corte Constitucional del Ecuador. (2025). <em>Resolución No. 129</em>. Registro Oficial Constitucional 78.</p>
+      </div>
+  <div class="bib-nota">
+    <p>Se recomienda verificar cada referencia en Google Scholar o en el repositorio institucional antes de citar en trabajos académicos. La vigencia de las normas se comprueba en sus fuentes oficiales; Google Scholar no sustituye esa verificación.</p>
+  </div>
+</section>
+
+</main>
+
+<footer>Auditoría Forense · Semana 03 · Material de práctica</footer>
+
+<script>
+/* ---------- 1. Datos de evaluación (generados desde ej_semana03.json) ---------- */
+const DATOS_E1 = [
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 278 del COIP, ¿qué condición define la conducta de peculado?",
+  "opciones": [
+   "Ser cliente habitual de la entidad que recibe el bien.",
+   "Ser servidor público, persona que actúa en virtud de una potestad estatal o proveedor del Estado que, en beneficio propio o de terceros, abusa, se apropia o dispone arbitrariamente de bienes que tiene en su poder por razón de su cargo.",
+   "Tener una cuenta bancaria con saldo alto.",
+   "Haber firmado un contrato privado con un cliente."
+  ],
+  "correcta": 1,
+  "retro": [
+   "Ser cliente no es una calidad del sujeto activo de peculado; el tipo exige una función estatal o la calidad de proveedor del Estado.",
+   "Es la descripción del artículo 278: calidad del sujeto, bien en su poder por razón del cargo y disposición arbitraria en beneficio propio o de terceros.",
+   "El saldo de una cuenta no es un elemento del tipo de peculado.",
+   "Un contrato privado no convierte a una persona en sujeto activo del peculado; lo que importa es la función pública o la condición de proveedor del Estado."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué describe el artículo 279 del COIP sobre el enriquecimiento ilícito?",
+  "opciones": [
+   "Cualquier aumento de sueldo de un empleado de una empresa privada.",
+   "Una venta a crédito que supera el presupuesto de la empresa.",
+   "Un incremento patrimonial injustificado de un servidor público, producto de su cargo, a su nombre o mediante persona interpuesta.",
+   "Un préstamo bancario pagado a tiempo por una persona sin cargo público."
+  ],
+  "correcta": 2,
+  "retro": [
+   "Un aumento de sueldo de una empresa privada no es el incremento patrimonial injustificado del artículo 279, que se refiere a servidores públicos.",
+   "Una venta a crédito es una operación comercial; el tipo exige un incremento patrimonial injustificado producto del cargo público.",
+   "Es la descripción del artículo 279: incremento patrimonial injustificado, vinculado al cargo y a nombre propio o de persona interpuesta.",
+   "Un préstamo pagado a tiempo es una operación con origen documentado y no describe un incremento injustificado de un servidor público."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Cuál afirmación describe correctamente el cohecho del artículo 280 del COIP?",
+  "opciones": [
+   "El servidor público recibe o acepta un beneficio indebido para hacer, omitir o retardar un acto de su función.",
+   "El servidor público exige a un ciudadano una entrega indebida bajo amenaza.",
+   "El servidor público desvía fondos de la entidad en beneficio propio.",
+   "Un proveedor cobra un precio superior al de mercado en un contrato."
+  ],
+  "correcta": 0,
+  "retro": [
+   "Es la descripción del cohecho: se recibe o acepta un beneficio indebido relativo a las funciones del servidor público.",
+   "Esa es la concusión (art. 281): quien exige la entrega abusando de su cargo; el cohecho se refiere a recibir o aceptar un beneficio.",
+   "Esa es la conducta de peculado (art. 278), que se refiere a bienes o dineros en poder del servidor por razón de su cargo.",
+   "Esa es la referencia al sobreprecio en contratación pública (art. 294.1), que no es el cohecho."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué distingue la concusión del artículo 281 del COIP del cohecho del artículo 280?",
+  "opciones": [
+   "En la concusión, el particular ofrece el pago; en el cohecho, el funcionario lo exige.",
+   "La concusión solo se aplica a personas privadas.",
+   "No hay diferencia; son dos nombres para la misma conducta.",
+   "En la concusión, el servidor público abusa de su cargo y ordena o exige la entrega; en el cohecho, se recibe, acepta u ofrece un beneficio indebido relativo a un acto de la función."
+  ],
+  "correcta": 3,
+  "retro": [
+   "Esta opción invierte los papeles: en la concusión quien exige es el funcionario, no el particular.",
+   "El artículo 281 se refiere a servidores públicos y a personas que actúan en virtud de una potestad estatal; no se aplica solo a particulares.",
+   "Son conductas distintas, con sujetos y verbos diferentes; por eso no son dos nombres para lo mismo.",
+   "Es correcta: la concusión es exigir abusando del cargo; el cohecho es recibir, aceptar u ofrecer un beneficio indebido en relación con un acto de la función."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "En la Sesión 01 se estudió el artículo 294.1 del COIP. ¿Qué debe probarse para sostener un sobreprecio en contratación pública?",
+  "opciones": [
+   "Que el precio pagado sea mayor que el de la compra anterior de la misma entidad.",
+   "Que el sobreprecio sea evidente y comprobado frente al precio ordinario del mercado, con una referencia comparable.",
+   "Que el proveedor tenga su domicilio en otra provincia.",
+   "Que la compra se haya realizado por internet."
+  ],
+  "correcta": 1,
+  "retro": [
+   "Una compra anterior puede no ser comparable (otra calidad, otra fecha). El artículo exige el precio ordinario del mercado.",
+   "Es lo que exige el artículo 294.1: un sobreprecio evidente y comprobado frente al precio ordinario del mercado, con una referencia comparable.",
+   "El domicilio del proveedor no es un elemento del sobreprecio.",
+   "El medio de compra no es un elemento del sobreprecio; lo que importa es la comparación con el precio de mercado."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué describe el artículo 298 del COIP sobre la defraudación tributaria?",
+  "opciones": [
+   "Pagar los tributos a tiempo con su respectivo comprobante.",
+   "Llevar la contabilidad mediante un contador externo.",
+   "Solicitar una devolución legal de un tributo con los documentos completos.",
+   "Simular, ocultar, omitir, falsear o engañar a la Administración Tributaria para dejar de pagar tributos realmente debidos."
+  ],
+  "correcta": 3,
+  "retro": [
+   "Pagar a tiempo no es defraudación; es el cumplimiento de la obligación.",
+   "Contratar un contador externo es una práctica ordinaria; no describe la conducta del artículo 298.",
+   "Una devolución legal con documentos completos no es la conducta descrita; el artículo 298 se refiere a obtener indebidamente una devolución.",
+   "Es la descripción del artículo 298: simular, ocultar, omitir, falsear o engañar a la administración para dejar de pagar tributos debidos."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué es el rastro contable de una operación?",
+  "opciones": [
+   "El saldo final de la caja a fin de mes.",
+   "El conjunto de documentos, registros y asientos que permiten seguir una operación desde su origen hasta su registro final.",
+   "Cualquier conversación entre el auditor y el gerente.",
+   "La opinión personal del auditor sobre la operación."
+  ],
+  "correcta": 1,
+  "retro": [
+   "El saldo de caja es un dato aislado; no permite seguir la operación desde su origen.",
+   "Es la definición de rastro contable: la trazabilidad documental y de registros de una operación.",
+   "Una conversación no es un registro que permita reconstruir una operación; debe quedar respaldada por documentos.",
+   "La opinión del auditor no es un elemento de la operación; debe basarse en documentos y registros."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Cuál es la diferencia entre un indicio y un hecho en el análisis forense?",
+  "opciones": [
+   "Un indicio orienta una hipótesis y requiere contraste; un hecho es un suceso acreditado con elementos verificados.",
+   "Un indicio es una prueba plena; un hecho es una sospecha.",
+   "Son sinónimos en la auditoría forense.",
+   "Un hecho solo existe si una sentencia lo declara."
+  ],
+  "correcta": 0,
+  "retro": [
+   "Es la distinción de la Semana 02 y de esta sesión: el indicio orienta y se contrasta; el hecho se acredita con elementos verificados.",
+   "Un indicio no es prueba plena; orienta una hipótesis y debe contrastarse con otros elementos.",
+   "No son sinónimos: el indicio es una pista que se contrasta; el hecho es un suceso acreditado.",
+   "Un hecho puede acreditarse con documentos verificados; no depende de que una sentencia lo declare para existir."
+  ]
+ },
+ {
+  "badge": "Análisis",
+  "pregunta": "Caso didáctico: el Hospital Demo Río Verde (entidad pública ficticia) compra 4.000 unidades de un producto a $3,00 cada una. La referencia documentada de mercado, comparable, es $2,25 por unidad. ¿Cuál es el porcentaje de sobreprecio correcto, con la base adecuada?",
+  "opciones": [
+   "25,00 %, calculado como $0,75 ÷ $3,00.",
+   "33,33 %, calculado como $0,75 ÷ $2,25.",
+   "75,00 %, por ser la diferencia por unidad expresada como porcentaje.",
+   "133,33 %, calculado como $3,00 ÷ $2,25."
+  ],
+  "correcta": 3,
+  "retro": [
+   "La base debe ser la referencia de mercado ($2,25), no el precio pagado ($3,00).",
+   "Esta opción tiene dos errores: el porcentaje y la base correctos son los de la referencia; el resultado de la opción d mide el precio pagado frente a la referencia.",
+   "La diferencia por unidad ($0,75) es un importe en dólares, no un porcentaje.",
+   "Es el correcto: $0,75 ÷ $2,25 = 0,3333 = 33,33 %. Un porcentaje de sobreprecio se mide sobre el precio ordinario de mercado."
+  ]
+ },
+ {
+  "badge": "Análisis",
+  "pregunta": "Caso didáctico: Distribuidora Costa Demo S.A. es una empresa privada. Sus participantes en el expediente son el gerente general, la contadora general, el jefe de compras y el bodeguero. ¿Qué afirmación es correcta?",
+  "opciones": [
+   "Ningún dato del caso indica que los participantes sean servidores públicos; por eso los delitos contra la eficiencia de la administración pública no se aplican de forma directa, y deben revisarse otras calificaciones según los hechos.",
+   "El bodeguero, por ser empleado, es servidor público y el peculado se aplica directamente.",
+   "El jefe de compras comete cohecho por tener un proveedor favorito.",
+   "La diferencia de $3.500,00 entre presupuesto y compras demuestra peculado."
+  ],
+  "correcta": 0,
+  "retro": [
+   "Es correcta: la calidad de servidor público no aparece en el expediente; la tipificación depende de hechos y de la calidad de quien actúa.",
+   "Ser empleado de una empresa privada no es ser servidor público; el peculado exige la calidad del artículo 278.",
+   "Tener un proveedor favorito no describe el cohecho, que exige recibir o aceptar un beneficio indebido de un servidor público en relación con un acto de su función.",
+   "La diferencia presupuestaria es una alerta (indicio) que debe contrastarse; no demuestra un delito."
+  ]
+ },
+ {
+  "badge": "Análisis",
+  "pregunta": "Caso didáctico: la empresa Comercial Río Dorado Demo S.A. registra ventas por $100.000,00 y declara $82.000,00. ¿Qué afirmación es la más adecuada?",
+  "opciones": [
+   "La diferencia de $18.000,00 demuestra defraudación tributaria.",
+   "Como no hay denuncia, la diferencia no puede analizarse.",
+   "La diferencia es un indicio que requiere contraste (facturas, libros, depósitos) antes de encuadrarla en un numeral del artículo 298.",
+   "El porcentaje correcto es 21,95 % sobre las ventas registradas."
+  ],
+  "correcta": 2,
+  "retro": [
+   "Una diferencia es un indicio, no una prueba: puede tener causas legítimas (anulaciones, errores de registro).",
+   "La diferencia puede analizarse de oficio como indicio; la falta de denuncia no impide revisar los registros.",
+   "Es correcta: el indicio se contrasta con documentos antes de cualquier encuadre preliminar, sin atribuir intención.",
+   "21,95 % es el resultado de dividir entre las ventas declaradas; el porcentaje sobre las ventas registradas es 18,00 %."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué significa que una tipificación penal sea preliminar?",
+  "opciones": [
+   "Que es una sentencia firme sobre la responsabilidad de una persona.",
+   "Que es una hipótesis de encuadre jurídico sujeta a contraste; no equivale a declarar la responsabilidad penal de nadie.",
+   "Que es una cifra exacta calculada con documentos.",
+   "Que cualquier denuncia anónima ya constituye una tipificación."
+  ],
+  "correcta": 1,
+  "retro": [
+   "La sentencia firme es una decisión judicial; la tipificación preliminar es previa y provisional.",
+   "Es lo que se estudió: el encuadre es provisional, depende del contraste de los hechos y no declara responsabilidad.",
+   "Una cifra exacta no es una tipificación; el encuadre jurídico es una hipótesis que se sostiene con elementos.",
+   "Una denuncia anónima es una comunicación no comprobada; no basta para tipificar."
+  ]
+ },
+ {
+  "badge": "Análisis",
+  "pregunta": "Caso didáctico: un funcionario de una entidad pública recibe, de un proveedor, un viaje pagado mientras la entidad evalúa la oferta de ese proveedor. ¿Cuál es la hipótesis de tipificación preliminar más adecuada?",
+  "opciones": [
+   "Concusión, porque el proveedor fue quien ordenó el viaje.",
+   "Defraudación tributaria, porque hay un viaje pagado.",
+   "Peculado, porque el viaje es un bien del Estado.",
+   "Cohecho, como hipótesis preliminar, si se confirma que el beneficio se recibió en relación con un acto de la función."
+  ],
+  "correcta": 3,
+  "retro": [
+   "En la concusión quien exige es el funcionario; aquí el beneficio lo ofrece el proveedor.",
+   "La defraudación tributaria se refiere a engañar a la administración tributaria para no pagar tributos; el caso no describe eso.",
+   "El peculado exige que el bien esté en poder del servidor por razón de su cargo; el viaje pagado por un proveedor no es ese caso.",
+   "Es correcta como hipótesis: el cohecho se refiere a recibir un beneficio indebido relativo a un acto de la función, que debe confirmarse."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "En el cálculo de un sobreprecio, ¿cuál es la base correcta para el porcentaje?",
+  "opciones": [
+   "El precio pagado por la entidad.",
+   "El total de compras del año.",
+   "El precio de referencia comparable, que refleja el precio ordinario del mercado.",
+   "La diferencia por unidad expresada en dólares."
+  ],
+  "correcta": 2,
+  "retro": [
+   "Dividir entre el precio pagado mide otra magnitud: la parte del precio pagado que corresponde a la diferencia.",
+   "El total anual mezcla compras no comparables; la base debe ser el precio de referencia de la misma operación.",
+   "Es correcta: el sobreprecio se mide frente al precio ordinario del mercado, con una referencia comparable.",
+   "La diferencia en dólares es un importe, no un porcentaje; el porcentaje necesita una base."
+  ]
+ },
+ {
+  "badge": "Análisis",
+  "pregunta": "Caso didáctico: en una entidad pública ficticia, un técnico encuentra una factura pagada que tiene sello de la entidad, pero no hay acta de recepción de los bienes. ¿Qué procedimiento es el adecuado?",
+  "opciones": [
+   "Registrar la falta del acta como hecho, tratarla como indicio y formular una hipótesis que se contraste con bodega y proveedor.",
+   "Concluir peculado, porque la factura fue pagada.",
+   "Descartar la observación, porque la factura tiene sello.",
+   "Afirmar que el proveedor cometió defraudación tributaria."
+  ],
+  "correcta": 0,
+  "retro": [
+   "Es correcta: el acta ausente es un hecho documentado que orienta una hipótesis; la hipótesis se contrasta con bodega, el proveedor y los registros de entrega.",
+   "Una factura pagada no demuestra peculado; la ausencia del acta es un indicio que debe contrastarse.",
+   "El sello no reemplaza el acta de recepción; la observación debe analizarse.",
+   "La falta de acta no permite afirmar defraudación tributaria; eso exigiría revisar la declaración y los registros tributarios."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Por qué una diferencia de precio calculada no prueba por sí sola un delito?",
+  "opciones": [
+   "Porque una diferencia es un dato que debe explicarse con el proceso de contratación, la calidad del bien y la referencia usada; no demuestra por sí sola intención ni responsabilidad.",
+   "Porque las diferencias de precio nunca se pueden calcular.",
+   "Porque el COIP prohíbe calcular sobreprecios.",
+   "Porque el precio pagado siempre es correcto cuando hay factura."
+  ],
+  "correcta": 0,
+  "retro": [
+   "Es correcta: la diferencia es un dato de partida; su interpretación exige el proceso, la comparabilidad de la referencia y la documentación.",
+   "Las diferencias de precio sí pueden calcularse; lo que no se puede hacer es darlas por delito sin análisis.",
+   "El COIP no prohíbe calcular sobreprecios; el artículo 294.1 exige que el sobreprecio esté comprobado.",
+   "Una factura muestra que existió una operación, pero no garantiza que el precio sea el ordinario del mercado."
+  ]
+ }
+];
+const DATOS_E2 = [
+ {
+  "badge": "Teórica",
+  "pregunta": "En el modelo explicativo del lavado de activos, ¿qué describe la fase de colocación?",
+  "opciones": [
+   "Mezclar operaciones para dificultar el rastro del dinero.",
+   "Usar los fondos en inversiones declaradas como legítimas.",
+   "Declarar pérdidas para reducir un impuesto.",
+   "Introducir en el sistema financiero o económico dinero de origen ilícito."
+  ],
+  "correcta": 2,
+  "retro": [
+   "Esa descripción corresponde a la estratificación, no a la colocación.",
+   "Esa es una operación de integración, que da apariencia de legitimidad a los fondos.",
+   "Declarar pérdidas describe un fraude tributario, no la fase de colocación del modelo.",
+   "Es correcta: la colocación es el ingreso del dinero al sistema, por ejemplo mediante depósitos. El modelo es explicativo, no una norma."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué describe la fase de estratificación del modelo explicativo?",
+  "opciones": [
+   "Realizar varias operaciones para separar los fondos de su origen.",
+   "Ingresar el efectivo en una sola cuenta de forma inmediata.",
+   "Comprar un bien con apariencia de legitimidad.",
+   "Pagar un tributo que se declaró a tiempo."
+  ],
+  "correcta": 0,
+  "retro": [
+   "Es correcta: la estratificación separa los fondos de su origen mediante operaciones sucesivas, como transferencias encadenadas.",
+   "Ingresar el efectivo en una sola cuenta corresponde a la colocación.",
+   "Comprar un bien con apariencia de legitimidad corresponde a la integración.",
+   "Pagar un tributo declarado a tiempo no es una fase del modelo de lavado."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué describe la fase de integración del modelo explicativo?",
+  "opciones": [
+   "Depositar varias veces montos menores en efectivo.",
+   "Transferir fondos entre cuentas de terceros en cadena.",
+   "Mezclar fondos de distintas procedencias en una sola cuenta.",
+   "Incorporar los fondos a la economía con apariencia de legitimidad."
+  ],
+  "correcta": 3,
+  "retro": [
+   "Depositar montos menores corresponde a la colocación.",
+   "Las transferencias encadenadas corresponden a la estratificación.",
+   "Mezclar fondos describe un paso de ocultamiento, no la fase de integración; la integración es la incorporación con apariencia de legitimidad.",
+   "Es correcta: la integración es la incorporación de los fondos a la economía con apariencia de legitimidad, como la compra de un bien."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 317 del COIP, ¿qué conducta describe el numeral 2 sobre el lavado de activos?",
+  "opciones": [
+   "Tener o adquirir activos sin declararlos al fisco.",
+   "Prestar el nombre de una sociedad para la comisión del delito.",
+   "Declarar valores de mercancías superiores a los reales.",
+   "Ocultar, disimular o impedir la determinación real de la naturaleza, origen, procedencia o vinculación de activos de origen ilícito."
+  ],
+  "correcta": 3,
+  "retro": [
+   "Tener activos sin declararlos no es la conducta del numeral 2; el numeral 1 describe la tenencia o utilización de activos de origen ilícito.",
+   "Prestar el nombre de una sociedad corresponde al numeral 3.",
+   "Declarar valores superiores a los reales corresponde al numeral 7.",
+   "Es correcta: el numeral 2 describe el ocultamiento o disimulación del origen o de la procedencia de los activos."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué es una señal de alerta según el artículo 19 de la Norma de control de la SEPS?",
+  "opciones": [
+   "Un indicador atípico o inusual que sugiere una posible actividad de lavado; no implica por sí misma actividad ilícita y obliga a un análisis más profundo.",
+   "Una prueba plena de que una persona cometió lavado de activos.",
+   "Una sentencia de la Fiscalía sobre un socio.",
+   "Un reporte mensual que certifica que no hubo operaciones inusuales."
+  ],
+  "correcta": 0,
+  "retro": [
+   "Es correcta: la señal de alerta orienta el análisis; no prueba por sí sola una actividad ilícita.",
+   "Una señal de alerta no es una prueba plena; es un indicador que debe analizarse y documentarse.",
+   "La sentencia es una decisión judicial; una señal de alerta es un indicador interno de la entidad.",
+   "Ese es el NO ROS, que es un reporte de no existencia de operaciones inusuales, no una señal de alerta."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según la Norma de control de la SEPS, ¿qué es un reporte de operación sospechosa (ROS)?",
+  "opciones": [
+   "Un reporte que la entidad envía a sus socios sobre sus cuentas.",
+   "Una declaración de cumplimiento tributario anual.",
+   "Un documento reservado con el que la entidad comunica a la UAFE movimientos que se apartan del perfil de la contraparte y que no pudieron sustentarse documentalmente.",
+   "Un listado de los clientes con mayor saldo."
+  ],
+  "correcta": 2,
+  "retro": [
+   "Los reportes a los socios no son el ROS; el ROS se dirige a la UAFE y es reservado.",
+   "La declaración tributaria anual es otro tipo de obligación; el ROS es un reporte a la UAFE.",
+   "Es correcta: el ROS es el reporte reservado a la UAFE sobre movimientos que no pudieron sustentarse.",
+   "Un listado de saldos no es un reporte de operación sospechosa."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué es el reporte NO ROS?",
+  "opciones": [
+   "Un reporte por cada operación sospechosa, enviado de inmediato.",
+   "Una declaración mensual en la que la entidad certifica que, tras el monitoreo, no identificó operaciones inusuales, injustificadas o sospechosas.",
+   "Un informe anual del oficial de cumplimiento.",
+   "Un informe ejecutivo de la UAFE para la Fiscalía."
+  ],
+  "correcta": 1,
+  "retro": [
+   "Esa es la descripción del ROS, que se envía por operaciones que no pudieron sustentarse. El NO ROS certifica la ausencia de operaciones sospechosas.",
+   "Es correcta: el NO ROS certifica que, tras el monitoreo, no se identificaron operaciones sospechosas en el periodo.",
+   "El informe anual es un documento de gestión del oficial de cumplimiento, no un NO ROS.",
+   "El informe ejecutivo lo emite la UAFE a solicitud de la Fiscalía; no es un NO ROS."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 58 de la Ley de 2024, ¿cuál es el umbral de las transacciones que deben reportarse a la UAFE, individuales o múltiples de un mismo beneficiario en un mes?",
+  "opciones": [
+   "USD 5.000,00.",
+   "USD 9.000,00.",
+   "USD 10.000,00.",
+   "USD 20.000,00."
+  ],
+  "correcta": 2,
+  "retro": [
+   "El umbral de la Ley no es USD 5.000,00.",
+   "El umbral de la Ley no es USD 9.000,00.",
+   "Es correcto: el art. 58 fija el umbral de USD 10.000,00, individual o múltiple en el mes para un mismo beneficiario.",
+   "El umbral de la Ley no es USD 20.000,00."
+  ]
+ },
+ {
+  "badge": "Análisis",
+  "pregunta": "Caso didáctico: en la Cooperativa Demo Alfa, un socio deposita en efectivo tres veces en el mismo mes: $9.500,00, $9.500,00 y $9.500,00. ¿Qué conclusión es la adecuada?",
+  "opciones": [
+   "No corresponde ningún reporte, porque cada depósito es menor a $10.000,00.",
+   "Corresponde considerar la suma del mes ($28.500,00), que supera el umbral; además, el patrón es una señal de alerta que debe analizarse, sin concluir lavado por el monto.",
+   "Debe reportarse solo el depósito mayor, de $9.500,00.",
+   "El monto demuestra fraude, por lo que se debe reportar como lavado consumado."
+  ],
+  "correcta": 1,
+  "retro": [
+   "El art. 58 exige sumar las operaciones múltiples del mismo beneficiario en el mes; la suma supera el umbral.",
+   "Es correcta: la suma de $28.500,00 supera el umbral y el fraccionamiento es una señal de alerta que debe analizarse, sin afirmar un delito por el monto.",
+   "Reportar un solo depósito no refleja la suma del mes exigida por el art. 58.",
+   "El monto no demuestra fraude ni lavado; es un dato que obliga a análisis y justificación documental."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué función principal tiene la UAFE según el artículo 17 de la Ley de 2024?",
+  "opciones": [
+   "Dictar sentencias en los procesos de lavado de activos.",
+   "Investigar y condenar a las personas reportadas.",
+   "Recibir los reportes de operaciones sospechosas y elaborar inteligencia financiera.",
+   "Ser la única entidad que puede tener cuentas bancarias de la economía popular."
+  ],
+  "correcta": 2,
+  "retro": [
+   "La UAFE no dicta sentencias; los jueces deciden en el proceso penal.",
+   "La UAFE no investiga ni condena; es una entidad de inteligencia financiera que puede intervenir como parte procesal.",
+   "Es correcta: el art. 17 le atribuye recibir reportes de operaciones sospechosas y elaborar inteligencia financiera.",
+   "La afirmación no está en el artículo 17 ni es una función de la UAFE estudiada."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 70 de la Ley de 2024, ¿cómo debe entenderse el informe ejecutivo de la UAFE en una investigación?",
+  "opciones": [
+   "Como una sentencia que declara la responsabilidad penal.",
+   "Como un indicio orientador para las investigaciones de las autoridades, que no reemplaza la prueba.",
+   "Como una prueba plena que no requiere contraste.",
+   "Como una denuncia anónima recibida por la Fiscalía."
+  ],
+  "correcta": 1,
+  "retro": [
+   "El informe ejecutivo no es una sentencia; la responsabilidad penal la decide un juez.",
+   "Es correcta: el art. 70 lo define como indicio orientador; la prueba debe obtenerse y valorarse en el proceso.",
+   "Un informe ejecutivo no es prueba plena; orienta la investigación y debe contrastarse.",
+   "No es una denuncia anónima; es un documento reservado de la UAFE que se emite a solicitud de la Fiscalía."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 62 de la Ley de 2024, ¿qué no pueden hacer los sujetos obligados y sus empleados?",
+  "opciones": [
+   "Enviar un reporte a la UAFE cuando detectan una operación sospechosa.",
+   "Mantener cuentas nominativas de sus clientes.",
+   "Cumplir sus obligaciones de monitoreo.",
+   "Revelar a terceros que remitieron un reporte o que una operación está siendo examinada."
+  ],
+  "correcta": 3,
+  "retro": [
+   "Enviar el reporte es la obligación que la Ley exige; no está prohibido.",
+   "Las cuentas nominativas son una obligación del art. 60, no una conducta prohibida por el art. 62.",
+   "Cumplir el monitoreo es una obligación; el art. 62 se refiere a la confidencialidad.",
+   "Es correcta: el art. 62 prohíbe revelar a terceros el envío de un reporte o el examen de una operación."
+  ]
+ },
+ {
+  "badge": "Análisis",
+  "pregunta": "Caso didáctico: un socio de bajo perfil de ingresos declarados realiza en una semana un depósito en efectivo de $6.000,00, una transferencia de $5.800,00 a un tercero sin relación declarada y, al día siguiente, un retiro de $6.000,00 de la misma cuenta. ¿Qué afirmación es correcta?",
+  "opciones": [
+   "Como cada operación es menor a $10.000,00, no hay nada que analizar.",
+   "El caso demuestra lavado de activos porque hay tres operaciones.",
+   "El patrón combina señales de alerta que deben documentarse y analizarse; no prueba por sí solo un lavado de activos.",
+   "La transferencia a un tercero es una operación legítima, por lo que no se analiza."
+  ],
+  "correcta": 2,
+  "retro": [
+   "Que las operaciones sean menores al umbral no elimina la necesidad de analizar un patrón de señales.",
+   "Tres operaciones no prueban lavado; el monto y la secuencia son señales que deben analizarse y justificarse.",
+   "Es correcta: la combinación de señales obliga a documentar, verificar y decidir; no equivale a una prueba de lavado.",
+   "Una transferencia a un tercero sin relación declarada es precisamente un elemento que debe justificarse."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Cuál es la diferencia entre un ROS y una denuncia penal?",
+  "opciones": [
+   "Son lo mismo: ambos declaran culpable a la persona reportada.",
+   "El ROS es un reporte reservado a la UAFE sobre movimientos no sustentados; no declara culpable a nadie ni es una denuncia de la víctima.",
+   "El ROS lo presenta la Fiscalía al juez para iniciar el proceso.",
+   "La denuncia penal solo se puede presentar sin identificar a la persona."
+  ],
+  "correcta": 1,
+  "retro": [
+   "El ROS no declara culpable a nadie; comunica movimientos que no pudieron sustentarse y que la UAFE analiza.",
+   "Es correcta: el ROS es un reporte reservado a la UAFE; no equivale a una denuncia ni a una declaración de culpabilidad.",
+   "El ROS lo envía el sujeto obligado a la UAFE, no la Fiscalía al juez.",
+   "La denuncia puede tener reserva de identidad, pero esa regla no define al ROS."
+  ]
+ },
+ {
+  "badge": "Análisis",
+  "pregunta": "Caso didáctico: un cliente recibe transferencias de tres países en dos días y las envía a cuentas de terceros sin justificación documental. Su perfil declarado es un comercio pequeño. ¿Cuál es el paso adecuado en la entidad?",
+  "opciones": [
+   "Cerrar la cuenta y comunicarlo al cliente para que no vuelva.",
+   "Documentar la señal, reunir la justificación documental y, si no se desvirtúa, presentarla al comité de cumplimiento para decidir el reporte.",
+   "Concluir lavado de activos y enviarlo como denuncia penal.",
+   "No hacer nada, porque el comercio pequeño no puede recibir transferencias."
+  ],
+  "correcta": 1,
+  "retro": [
+   "Comunicar al cliente la revisión vulnera la confidencialidad del art. 62 y no es el paso previsto del análisis.",
+   "Es correcta: la norma exige documentar la alerta, verificar su justificación y, si no se desvirtúa, seguir el procedimiento formal de reporte.",
+   "Concluir lavado de activos sin análisis confunde señal de alerta con delito demostrado.",
+   "Recibir transferencias no es ilegal; el perfil declarado obliga a analizar, no a presumir."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Por qué la fase de integración no debe confundirse con una inversión legítima?",
+  "opciones": [
+   "Porque la integración siempre se declara ante la UAFE.",
+   "Porque el modelo no prueba por sí solo el origen de los fondos: la calificación depende de la procedencia documentada, no de la apariencia del bien.",
+   "Porque la integración solo ocurre en efectivo.",
+   "Porque toda inversión es automáticamente un delito."
+  ],
+  "correcta": 0,
+  "retro": [
+   "Esa no es la razón: la integración no se identifica por declararse, sino por el contexto del análisis.",
+   "Es correcta: el modelo es explicativo; la calificación depende de la procedencia documentada de los fondos, y una inversión puede ser legítima.",
+   "La integración no se limita al efectivo; puede darse mediante bienes o inversiones.",
+   "Una inversión no es automáticamente delictiva; sin documentación de origen, no se puede concluir."
+  ]
+ }
+];
+
+/* ---------- 2. Navegación entre pestañas ---------- */
+(function navegacion(){
+  const botones = document.querySelectorAll('nav button[data-p]');
+  function mostrar(id){
+    document.querySelectorAll('section.pestana').forEach(s => s.classList.toggle('activa', s.id === id));
+    botones.forEach(b => b.setAttribute('aria-selected', b.dataset.p === id ? 'true' : 'false'));
+    window.scrollTo({top: 0, behavior: 'auto'});
+  }
+  botones.forEach(b => {
+    b.addEventListener('click', () => mostrar(b.dataset.p));
+    b.addEventListener('keydown', e => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      const arr = Array.from(botones);
+      const i = arr.indexOf(b);
+      const j = (i + (e.key === 'ArrowRight' ? 1 : -1) + arr.length) % arr.length;
+      arr[j].focus(); arr[j].click();
+    });
+  });
+})();
+
+/* ---------- 3. Motor de evaluación de práctica ---------- */
+function montarEvaluacion(contId, marcadorId, datos, clave){
+  const cont = document.getElementById(contId);
+  const marc = document.getElementById(marcadorId);
+  const n = datos.length;
+  let resp = new Array(n).fill(null);   // índice elegido por pregunta, o null
+
+  function fmt(x){ return x.toFixed(2).replace('.', ','); }
+
+  function pintarMarcador(){
+    const pendientes = resp.filter(r => r === null).length;
+    const aciertos = datos.reduce((s, p, i) => s + (resp[i] === p.correcta ? 1 : 0), 0);
+    const respondidas = n - pendientes;
+    const nota = (aciertos / n) * 10;
+    const pct = (aciertos / n) * 100;
+    marc.innerHTML =
+      '<div class="fila">' +
+      '<span>Pendientes: ' + pendientes + ' de ' + n + '</span>' +
+      '<span>Aciertos: ' + aciertos + '</span>' +
+      '<span>Calificación: ' + fmt(nota) + ' / 10</span>' +
+      '<span>Porcentaje: ' + fmt(pct) + ' %</span>' +
+      '</div>' +
+      '<div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="' + n + '" aria-valuenow="' + respondidas + '" aria-label="Progreso de respuestas"><div style="width:' + ((respondidas / n) * 100).toFixed(1) + '%"></div></div>';
+    return {pendientes, aciertos};
+  }
+
+  function pintarFinal(){
+    const {pendientes, aciertos} = pintarMarcador();
+    let final = cont.querySelector('.final');
+    if (!final){ final = document.createElement('div'); final.className = 'final'; final.setAttribute('role','status'); cont.appendChild(final); }
+    if (pendientes > 0){ final.classList.remove('visible'); final.innerHTML = ''; return; }
+    const errores = n - aciertos;
+    let html = '<p><strong>Completaste todas las preguntas.</strong> Tuviste ' + aciertos + ' aciertos de ' + n + '.</p>';
+    if (errores > 0){
+      html += '<p>Revisa las retroalimentaciones de las preguntas que fallaste y, después, intenta de nuevo.</p>' +
+              '<div class="botones"><button type="button" data-intentar="' + clave + '">Intentar nuevamente</button></div>';
+    } else {
+      html += '<p>Respondiste correctamente todas las preguntas.</p>';
+    }
+    final.innerHTML = html;
+    final.classList.add('visible');
+    final.querySelectorAll('input').forEach(x => x.disabled = true);
+  }
+
+  function bloqueado(){ return resp.every(r => r !== null); }
+
+  function elegir(i, k){
+    if (bloqueado()) return;
+    resp[i] = k;
+    const p = datos[i];
+    const grupo = cont.querySelectorAll('[data-q="' + i + '"]');
+    grupo.forEach((lab, idx) => {
+      lab.classList.toggle('correcta', idx === p.correcta && idx === k);
+      lab.classList.toggle('incorrecta', idx === k && idx !== p.correcta);
+    });
+    const ret = document.getElementById(clave + '-r' + i);
+    const ok = (k === p.correcta);
+    ret.className = 'retro ' + (ok ? 'ok' : 'no');
+    ret.textContent = (ok ? 'CORRECTO. ' : 'Incorrecto. ') + p.retro[k];
+    pintarFinal();
+  }
+
+  function reiniciar(){
+    resp = new Array(n).fill(null);
+    cont.querySelectorAll('input').forEach(x => { x.checked = false; x.disabled = false; });
+    cont.querySelectorAll('.opcion').forEach(l => l.classList.remove('correcta','incorrecta'));
+    cont.querySelectorAll('.retro').forEach(r => { r.className = 'retro'; r.textContent = ''; });
+    pintarFinal();
+  }
+
+  cont.innerHTML = '';
+  datos.forEach((p, i) => {
+    const art = document.createElement('article');
+    art.className = 'pregunta';
+    const letras = ['a', 'b', 'c', 'd'];
+    const opcionesHtml = p.opciones.map((o, k) =>
+      '<label class="opcion" data-q="' + i + '"><input type="radio" name="' + clave + '-q' + i + '" value="' + k + '"><span><strong>' + letras[k] + ')</strong> ' + o + '</span></label>'
+    ).join('');
+    art.innerHTML =
+      '<p><span class="insignia' + (p.badge === 'Análisis' ? ' analisis' : '') + '">[' + p.badge + ']</span> <span class="meta">Pregunta ' + (i + 1) + ' de ' + n + '</span></p>' +
+      '<p class="enun">' + p.pregunta + '</p>' +
+      '<div class="opciones" role="radiogroup" aria-label="Opciones de la pregunta ' + (i + 1) + '">' + opcionesHtml + '</div>' +
+      '<div class="retro" id="' + clave + '-r' + i + '" aria-live="polite"></div>';
+    cont.appendChild(art);
+  });
+  cont.addEventListener('change', e => {
+    if (e.target.matches('input[type="radio"]')){
+      const i = Number(e.target.name.split('-q')[1]);
+      elegir(i, Number(e.target.value));
+    }
+  });
+  const btnReinicio = document.querySelector('[data-reiniciar="' + clave + '"]');
+  if (btnReinicio) btnReinicio.addEventListener('click', reiniciar);
+  cont.addEventListener('click', e => {
+    const b = e.target.closest('[data-intentar]');
+    if (b){ reiniciar(); }
+  });
+  pintarMarcador();
+}
+
+/* ---------- 4. Arranque ---------- */
+montarEvaluacion('quiz-e1', 'm-e1', DATOS_E1, 'e1');
+montarEvaluacion('quiz-e2', 'm-e2', DATOS_E2, 'e2');
+</script>
+</body>
+</html>

@@ -1,0 +1,1342 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoría Forense · Semana 04</title>
+<style>
+/* ---------- 1. Variables y base ---------- */
+:root{
+  --azul:#003366; --cielo:#87CEEB; --claro:#E8F4FD; --texto:#1b1b1b; --gris:#555;
+  --ok:#1e6b34; --ok-fondo:#e6f4ea; --no:#8a1c1c; --no-fondo:#fbeaea; --blanco:#fff;
+  --serif:"Lora", Georgia, "Times New Roman", serif;
+  --sans:"Source Sans 3", "Segoe UI", Arial, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:#f7f9fb;color:var(--texto);font-family:var(--sans);font-size:17px;line-height:1.55;overflow-x:hidden}
+header{background:#003366;color:#fff;padding:14px 16px}
+header h1{font-family:var(--serif);font-size:1.35rem;margin:0;font-weight:700}
+header p{margin:4px 0 0;font-size:.9rem;opacity:.9}
+nav{background:var(--cielo);color:#000;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;position:sticky;top:0;z-index:5}
+nav button{background:transparent;border:0;color:#000;font:inherit;font-weight:600;padding:12px 14px;cursor:pointer;min-height:44px}
+nav button:focus-visible{outline:3px solid #003366;outline-offset:-3px}
+nav button[aria-selected="true"]{background:#fff;color:#003366;font-weight:700}
+main{padding:16px;max-width:860px;margin:0 auto}
+section.pestana{display:none}
+section.pestana.activa{display:block}
+h2{font-family:var(--serif);color:var(--azul);font-size:1.5rem;margin:.4em 0 .5em;line-height:1.25}
+h3{font-family:var(--serif);color:var(--azul);font-size:1.2rem;margin:1.2em 0 .4em}
+h4{font-family:var(--sans);color:var(--azul);font-size:1.02rem;margin:1em 0 .3em;font-weight:700}
+p{margin:.5em 0}
+.meta{font-size:.92rem;color:var(--gris);margin-bottom:.8em}
+.distribucion{font-size:.95rem;background:#fff;border:1px solid #d6e2ec;border-radius:6px;padding:10px 12px}
+.distribucion li{margin:.1em 0}
+
+/* ---------- 2. Bloques de contenido ---------- */
+.antes{background:#fff;border-left:6px solid var(--cielo);border-radius:6px;padding:12px 14px;margin:14px 0;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.concepto{background:#fff;border-left:6px solid var(--azul);border-radius:6px;padding:12px 14px;margin:14px 0;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.ejemplo{background:var(--claro);border-radius:6px;padding:10px 12px;margin:10px 0}
+.error{background:var(--no-fondo);border-left:6px solid var(--no);border-radius:6px;padding:10px 12px;margin:12px 0}
+.origen{font-size:.95rem;color:var(--gris);border-top:1px dashed #b7c7d5;padding-top:6px;margin-top:10px}
+.pendiente{background:#f1f5f9;border-left:6px solid #5a6b7b;border-radius:6px;padding:10px 12px;margin:12px 0;font-size:.95rem}
+.entender{background:#fffbea;border-left:6px solid #c9a227;border-radius:6px;padding:10px 12px;margin:12px 0}
+.nota{background:#f1f5f9;border-radius:6px;padding:10px 12px;margin:12px 0;font-size:.95rem}
+.ejercicio{background:#fff;border:1px solid #c5d6e4;border-radius:8px;padding:12px 14px;margin:16px 0}
+.ejercicio .tiempo{font-size:.9rem;color:var(--gris)}
+.insignia{display:inline-block;font-size:.8rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--azul);color:#fff;margin-right:6px}
+.insignia.analisis{background:#5a3e8a}
+
+/* ---------- 3. Tablas ---------- */
+.tabla-wrap{overflow-x:auto;margin:12px 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:480px;font-size:.95rem;background:#fff}
+caption{caption-side:top;text-align:left;font-weight:700;color:var(--azul);padding:6px 0;font-family:var(--serif)}
+th,td{border:1px solid #c5d6e4;padding:6px 8px;vertical-align:top;text-align:left}
+th{background:var(--azul);color:#fff}
+
+/* ---------- 4. Soluciones desplegables ---------- */
+details{background:#fff;border:1px solid #9fb8cc;border-radius:6px;margin:10px 0;padding:8px 12px}
+summary{cursor:pointer;font-weight:700;color:var(--azul);min-height:32px}
+summary:focus-visible{outline:3px solid var(--azul)}
+details > div{margin-top:8px}
+
+/* ---------- 5. Evaluación ---------- */
+.marcador{position:sticky;top:44px;background:#fff;border:2px solid var(--azul);border-radius:8px;padding:10px 12px;margin:12px 0;z-index:4}
+.marcador .fila{display:flex;flex-wrap:wrap;gap:8px 16px;font-weight:600}
+.barra{height:12px;background:#dbe6ef;border-radius:999px;overflow:hidden;margin-top:8px}
+.barra > div{height:100%;width:0;background:var(--azul);transition:width .3s}
+.pregunta{background:#fff;border:1px solid #c5d6e4;border-radius:8px;padding:12px 14px;margin:12px 0}
+.pregunta .enun{font-weight:600;margin:0 0 8px}
+.opciones{display:grid;gap:6px}
+.opcion{display:flex;gap:8px;align-items:flex-start;border:1px solid #9fb8cc;border-radius:6px;padding:8px 10px;background:#fff;cursor:pointer;min-height:44px}
+.opcion input{margin-top:4px;width:18px;height:18px;flex:0 0 auto}
+.opcion:focus-within{outline:3px solid var(--azul);outline-offset:1px}
+.opcion.correcta{background:var(--ok-fondo);border-color:var(--ok)}
+.opcion.incorrecta{background:var(--no-fondo);border-color:var(--no)}
+.retro{margin-top:8px;padding:8px 10px;border-radius:6px;font-size:.97rem;display:none}
+.retro.ok{display:block;background:var(--ok-fondo);color:#123d20}
+.retro.no{display:block;background:var(--no-fondo);color:#4d1010}
+.final{margin:14px 0;padding:12px 14px;border-radius:8px;background:#fff;border:2px solid var(--azul);display:none}
+.final.visible{display:block}
+.botones{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.botones button{font:inherit;font-weight:700;background:var(--azul);color:#fff;border:0;border-radius:6px;padding:10px 14px;min-height:44px;cursor:pointer}
+.botones button.secundario{background:#fff;color:var(--azul);border:2px solid var(--azul)}
+.botones button:focus-visible{outline:3px solid #000;outline-offset:2px}
+.aviso-practica{font-size:.92rem;color:var(--gris)}
+
+/* ---------- 6. Reflexión, IA y bibliografía ---------- */
+.refl{background:#fff;border-radius:8px;padding:12px 14px;margin:14px 0;border:1px solid #c5d6e4}
+.refl .pregunta-r{font-weight:700;color:var(--azul)}
+.ej-ia ol li{margin:.3em 0}
+.bib p{padding-left:2em;text-indent:-2em;margin:.6em 0}
+.bib-nota{background:#fffbea;border-left:6px solid #c9a227;padding:10px 12px;border-radius:6px}
+
+footer{font-size:.85rem;color:var(--gris);text-align:center;padding:16px}
+@media (min-width:700px){ body{font-size:18px} }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Auditoría Forense · Semana 04</h1>
+  <p>Unidad 1 · Marco jurídico ecuatoriano: Constitución, Contraloría, pericia en el proceso penal y control de recursos públicos</p>
+</header>
+
+<nav role="tablist" aria-label="Pestañas de la semana">
+  <button role="tab" data-p="p0" aria-selected="true">Repaso</button>
+  <button role="tab" data-p="p1" aria-selected="false">Sesión 01</button>
+  <button role="tab" data-p="p2" aria-selected="false">Evaluación 01</button>
+  <button role="tab" data-p="p3" aria-selected="false">Sesión 02</button>
+  <button role="tab" data-p="p4" aria-selected="false">Evaluación 02</button>
+  <button role="tab" data-p="p5" aria-selected="false">Reflexión</button>
+  <button role="tab" data-p="p6" aria-selected="false">Actividad con IA</button>
+  <button role="tab" data-p="p7" aria-selected="false">Bibliografía</button>
+</nav>
+
+<main>
+
+<!-- ============ PESTAÑA 0 · REPASO ============ -->
+<section id="p0" class="pestana activa" role="tabpanel">
+  <h2>Repaso: cómo llega una prueba pericial a un juicio</h2>
+  <p class="meta">Semana 04 · Unidad 1 · Repaso de lo que ya conoces</p>
+  <div class="antes">
+    <p>Imagina que una empresa recibe un documento titulado «informe pericial» en el que se señalan irregularidades en sus compras. ¿Basta con que lo firme una persona con título de contador para que el juez le dé valor? Esta semana descubrirás que no. La ley exige que quien firma tenga una condición determinada, que el informe tenga un contenido mínimo y que se sustente en la audiencia.</p>
+    <p>Al terminar, podrás distinguir el control que realiza la Contraloría de una prueba pericial presentada en un proceso penal, y explicar qué exige el COIP a un perito y a su informe.</p>
+    <p>Normas que aparecerán: Constitución, art. 211; Código Orgánico Integral Penal (COIP), arts. 453 a 457, 498, 500, 511 y 615; Ley Orgánica de la Contraloría General del Estado, art. 18 y arts. 23.1 a 23.3.</p>
+  </div>
+
+  <h3>Cuatro palabras que volverán</h3>
+  <p>Antes de avanzar, repasa estas palabras. Las usaremos en todo el widget.</p>
+  <div class="concepto">
+    <p><strong>Elemento obtenido:</strong> material que se recoge durante la investigación. Todavía no lo ha valorado el juez.</p>
+    <p><strong>Prueba:</strong> elemento que se presenta, se incorpora y se valora en la audiencia de juicio (COIP, art. 454, numeral 1).</p>
+    <p><strong>Perito:</strong> persona acreditada que aporta un conocimiento técnico especializado y lo explica en el proceso.</p>
+    <p><strong>Testigo:</strong> persona que declara sobre lo que percibió directamente. No es lo mismo que un perito.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo:</strong> una factura copiada de la bodega es un elemento obtenido. Se convierte en prueba solo cuando el juez la valora en la audiencia.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: tratar un informe como si ya fuera una prueba valorada.</strong></p>
+      <p><strong>Quién se afecta:</strong> la persona mencionada en el informe, que quedaría señalada antes de que el juez valore la prueba.</p>
+      <p><strong>Qué información cambia:</strong> el peso de la conclusión. Un elemento por valorar pasaría a ser una afirmación ya probada.</p>
+      <p><strong>En qué caso:</strong> si el informe se usa para decidir sin que su autor lo sustente en la audiencia.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: definiciones didácticas basadas en el COIP, art. 454, numeral 1. El ejemplo es didáctico.</p></div>
+  </div>
+
+  <h3>Lo que vas a estudiar</h3>
+  <ol>
+    <li><strong>Sesión 01:</strong> qué es un medio de prueba, cuándo un elemento se convierte en prueba, qué exige el COIP al perito y a su informe, y qué pasa con la pericia en la audiencia.</li>
+    <li><strong>Sesión 02:</strong> qué hace la Contraloría según su ley, qué ocurre cuando su informe tiene indicios de responsabilidad penal, y en qué se diferencia un examen especial de una pericia contable judicial.</li>
+  </ol>
+  <p>Cada evaluación mide solo lo que se explica en su sesión. Así puedes comprobar tu avance antes de seguir.</p>
+</section>
+
+<!-- ============ PESTAÑA 1 · SESIÓN 01 ============ -->
+<section id="p1" class="pestana" role="tabpanel">
+  <h2>Sesión 01 · Medios de prueba, el perito y la audiencia</h2>
+  <p class="meta">Semana 04 · Sesión 01 · Unidad 1 · Tema: qué convierte un elemento en prueba y qué debe cumplir una pericia penal</p>
+
+  <div class="antes">
+    <p><strong>Antes de empezar.</strong> Imagina que una empresa recibe un informe «pericial» que dice que sus compras tienen irregularidades. Para saber si ese informe puede usarse en un juicio, necesitas revisar tres cosas: quién lo firma, qué contiene y cómo se presenta ante el juez.</p>
+    <p>Al terminar esta sesión podrás explicar qué es un medio de prueba y cuándo un elemento se convierte en prueba; reconocer los requisitos del perito y el contenido mínimo de su informe; y anticipar qué debe ocurrir en la audiencia para que el juez lo valore.</p>
+    <p>Para qué te sirve: revisar si un informe puede tratarse como pericial, identificar qué le falta y preparar la sustentación oral.</p>
+    <p>Normas que aparecerán: Constitución, art. 211; COIP, arts. 453, 454 (numerales 1 y 6), 455, 456, 457, 498, 500, 511 y 615. Las penas no se incluyen en este material.</p>
+  </div>
+
+  <div class="distribucion">
+    <p><strong>Distribución orientativa de los 120 minutos</strong></p>
+    <ul>
+      <li>Apertura y recuperación de conocimientos previos: 10 minutos.</li>
+      <li>Explicación y ejemplos: 65 minutos.</li>
+      <li>Ejercicio 1, guiado: 15 minutos.</li>
+      <li>Ejercicio 2, guiado: 15 minutos.</li>
+      <li>Cierre, síntesis y preparación para la evaluación: 15 minutos.</li>
+    </ul>
+    <p class="aviso-practica">La evaluación de la sesión se realiza después de este bloque y no tiene un tiempo asignado.</p>
+  </div>
+
+  <h3>1. La Contraloría: quién controla los recursos del Estado</h3>
+  <div class="concepto">
+    <p>Antes de estudiar la pericia, conviene saber quién controla el uso de los recursos del Estado. La Constitución, en su artículo 211, define a la Contraloría General del Estado como el organismo técnico encargado de ese control.</p>
+    <p>Su trabajo produce informes de control, no sentencias. Esa diferencia es el punto de partida de esta semana: un informe de control puede señalar indicios, pero quien decide la responsabilidad penal es un juez, dentro de un proceso.</p>
+    <p><strong>Para qué lo usas:</strong> para saber qué autoridad produce cada documento y qué valor le corresponde en cada etapa.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1 (control):</strong> la Contraloría revisa las compras de una entidad pública y emite un informe de control con sus observaciones.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2 (sentencia):</strong> en una audiencia, el juez decide si hay responsabilidad penal después de valorar todas las pruebas.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 3 (fuera del control estatal):</strong> una empresa privada contrata a un consultor para mejorar sus procesos internos. Si no maneja recursos del Estado, ese trabajo no es un control de la Contraloría.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: confundir un informe de control con una sentencia.</strong></p>
+      <p><strong>Quién se afecta:</strong> la persona señalada en el informe.</p>
+      <p><strong>Qué información cambia:</strong> la fuerza de la conclusión. El informe orienta, pero no decide.</p>
+      <p><strong>En qué caso:</strong> si el informe se presenta como si ya declarara la responsabilidad penal de un servidor.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: Constitución, art. 211. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <div class="nota">
+    <p><strong>Una nota sobre el debido proceso.</strong> Todo proceso judicial debe respetar el debido proceso, que es una garantía reconocida en la Constitución. En esta semana no lo desarrollamos por artículo. Si quieres conocer su alcance, consulta el texto oficial de la Constitución.</p>
+  </div>
+
+  <h3>2. Medios de prueba y finalidad de la prueba</h3>
+  <div class="concepto">
+    <p>La prueba sirve para llevar al juez al convencimiento de los hechos y de la responsabilidad de la persona procesada (COIP, art. 453). Según el artículo 498, los medios de prueba son el documento, el testimonio y la pericia.</p>
+    <p>Un elemento obtenido en la investigación se convierte en prueba cuando se presenta, se incorpora y se valora en la audiencia de juicio (art. 454, numeral 1). Las pericias hechas durante la investigación también necesitan esa audiencia para tener valor de prueba.</p>
+    <p>El artículo 455 añade un límite importante: el fundamento debe basarse en hechos reales introducidos por un medio de prueba, y nunca en presunciones.</p>
+    <p><strong>Para qué lo usas:</strong> para distinguir qué elemento puede llegar a ser prueba y qué debe presentarse en la audiencia.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1 (documento):</strong> una factura del proveedor, entregada por contabilidad y reconocida por quien la emitió, puede presentarse como documento.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2 (pericia):</strong> el informe de un perito acreditado que analiza las facturas con una técnica explicada.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 3 (no basta una presunción):</strong> alguien es señalado porque su apellido aparece en un documento, sin ningún hecho que lo vincule con la infracción. El artículo 455 no permite fundar el nexo en una presunción.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: dar valor de prueba a un elemento que no se presentó en la audiencia.</strong></p>
+      <p><strong>Quién se afecta:</strong> la persona procesada, que podría ser condenada sin que la defensa haya podido cuestionar el elemento.</p>
+      <p><strong>Qué información cambia:</strong> la base de la decisión, que dejaría de apoyarse en una prueba valorada.</p>
+      <p><strong>En qué caso:</strong> si un informe se usa para decidir sin haberse presentado y valorado en la audiencia.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: COIP, arts. 453, 454 (numeral 1), 455 y 498. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <h3>3. Cadena de custodia y criterios de valoración</h3>
+  <div class="concepto">
+    <p>La <strong>cadena de custodia</strong> es el registro que acredita la identidad y el estado original de un elemento, las personas que intervienen en su recolección, envío, manejo, análisis y conservación, y los cambios que cada custodio le hace (COIP, art. 456). La cadena empieza donde se obtiene el elemento y termina por orden de la autoridad competente.</p>
+    <p>El juez valora la prueba considerando su legalidad, su autenticidad, su cadena de custodia y el grado de aceptación científica y técnica de los principios en que se apoya el informe pericial (art. 457).</p>
+    <p>Cuando el elemento es contenido digital, como un registro de accesos a un sistema, debe recogerse con técnicas digitales forenses (art. 500).</p>
+    <p><strong>Para qué lo usas:</strong> para anotar, en cada elemento, quién lo recibió, cuándo y en qué estado, antes de incluirlo en un informe.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1 (registro completo):</strong> una copia de facturas se entrega con un formulario que indica quién la recibió, la fecha, el estado del sobre y cada persona que la revisó después.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2 (sin trazabilidad):</strong> un archivo de correo copiado sin registrar quién lo extrajo ni cuándo. Su contenido puede ser correcto, pero falta la trazabilidad.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 3 (copia de un disco):</strong> un perito recibe una copia de un disco con un registro que muestra quién la entregó, cuándo y qué cambios sufrió después. Así puede comprobar que el contenido analizado es el mismo que se recogió.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: presentar un archivo digital sin cadena de custodia.</strong></p>
+      <p><strong>Quién se afecta:</strong> la persona cuyos datos aparecen en el archivo.</p>
+      <p><strong>Qué información cambia:</strong> el valor del archivo como prueba, que puede ser excluido o cuestionado por falta de autenticidad.</p>
+      <p><strong>En qué caso:</strong> si el informe analiza un archivo copiado sin registro de su origen.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: COIP, arts. 456, 457 y 500. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <h3>4. El perito y el contenido mínimo de su informe</h3>
+  <div class="concepto">
+    <p>El artículo 511 del COIP fija las reglas del perito, que es un profesional experto en un área y acreditado por el Consejo de la Judicatura (numeral 1). Su función es obligatoria: debe ser designado y notificado con el cargo (numeral 2). Si existe una causal de excusa, debe excusarse (numeral 3).</p>
+    <p>El perito no puede ser recusado (numeral 4). Pero si tiene una inhabilidad o una excusa debidamente comprobada, su informe no tiene valor.</p>
+    <p>El informe debe contener, como mínimo: el lugar y la fecha del peritaje; la identificación del perito; la descripción y el estado de la persona u objeto peritado; la técnica utilizada; la fundamentación científica; las ilustraciones cuando corresponda; las conclusiones y la firma (numeral 6). El perito debe comparecer a la audiencia, sustentar su informe y responder a los interrogatorios (numeral 7).</p>
+    <p><strong>Para qué lo usas:</strong> como lista de control antes de firmar un informe que podría presentarse en un juicio.</p>
+    <div class="tabla-wrap">
+      <table>
+        <caption>Tabla 1. Requisitos del perito y contenido mínimo del informe (COIP, art. 511)</caption>
+        <tr><th>Exigencia</th><th>Numeral</th><th>Qué debes revisar</th></tr>
+        <tr><td>Experiencia y acreditación</td><td>1</td><td>Que el perito sea experto en la materia y esté acreditado por el Consejo de la Judicatura</td></tr>
+        <tr><td>Designación y notificación</td><td>2</td><td>Que fue designado y notificado con el cargo</td></tr>
+        <tr><td>Excusa</td><td>3</td><td>Si existe una causal de excusa, el perito debe excusarse</td></tr>
+        <tr><td>Inhabilidad o excusa comprobada</td><td>4</td><td>Si se comprueba, el informe no tiene valor</td></tr>
+        <tr><td>Contenido mínimo</td><td>6</td><td>Lugar y fecha, identificación, descripción, técnica, fundamentación, conclusiones y firma</td></tr>
+        <tr><td>Sustentación</td><td>7</td><td>Comparecer a la audiencia y responder a los interrogatorios</td></tr>
+      </table>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1 (cumple):</strong> un perito acreditado y designado presenta un informe con lugar y fecha, identificación, descripción de lo examinado, técnica, fundamento, conclusiones y firma.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2 (no cumple el numeral 1):</strong> una persona con título universitario en contabilidad firma un informe, pero no está acreditada por el Consejo de la Judicatura. El título y la firma no reemplazan ese requisito.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 3 (excusa):</strong> un perito advierte, antes de aceptar el cargo, que tiene una causal de excusa. El numeral 3 le obliga a excusarse. Si no lo hace y la inhabilidad o excusa se comprueba, su informe no tendrá valor (numeral 4).</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: aceptar un informe sin revisar la acreditación del perito.</strong></p>
+      <p><strong>Quién se afecta:</strong> la persona señalada en el informe, y también la credibilidad de todo el peritaje.</p>
+      <p><strong>Qué información cambia:</strong> el valor del informe. Si hay una inhabilidad o excusa comprobada, el informe no tiene valor.</p>
+      <p><strong>En qué caso:</strong> si el informe se incorpora sin revisar la acreditación del perito ni su declaración de excusa.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: COIP, art. 511, numerales 1 a 7. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <h3>5. La pericia en la audiencia</h3>
+  <div class="concepto">
+    <p>En la audiencia, peritos y testigos prestan juramento de decir la verdad y son interrogados personalmente, o por sistemas telemáticos (COIP, art. 615, numeral 2). Su declaración personal no puede sustituirse por la lectura de sus informes (numeral 3).</p>
+    <p>El perito expone el contenido y las conclusiones de su informe. Después se le interroga, primero la parte que ofreció la prueba y luego las demás (numeral 5). Antes de declarar, peritos y testigos no pueden comunicarse entre sí ni ver u oír lo que ocurre en la audiencia (numeral 8).</p>
+    <p><strong>Para qué lo usas:</strong> para preparar la sustentación: saber qué preguntas recibirás y qué partes de tu informe deberás explicar.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1 (orden del interrogatorio):</strong> el perito explica la técnica de su informe; la parte que ofreció la prueba le pregunta primero, y después las demás partes.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2 (comunicación prohibida):</strong> un perito escucha la declaración de un testigo antes de declarar. El numeral 8 impide esa situación.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 3 (roles distintos):</strong> un testigo describe lo que vio en la escena; un perito explica la técnica con la que analizó las facturas. Cada uno declara sobre lo que le corresponde.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: reemplazar la declaración por la lectura del informe.</strong></p>
+      <p><strong>Quién se afecta:</strong> la defensa, que no podría preguntar al perito por su técnica ni por sus conclusiones.</p>
+      <p><strong>Qué información cambia:</strong> la posibilidad de cuestionar la prueba, que quedaría limitada.</p>
+      <p><strong>En qué caso:</strong> si el tribunal acepta solo la lectura del informe en lugar de la declaración del perito.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: COIP, art. 615, numerales 2, 3, 5 y 8. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <h3>6. Momento de intervención del perito</h3>
+  <div class="concepto">
+    <p>¿Cuándo entra el perito en un caso? La respuesta no es un único día. La norma exige dos actos: que el perito sea designado y notificado con el cargo (art. 511, numeral 2), y que sustente su informe en la audiencia (numeral 7).</p>
+    <p>En un manual institucional de la Fiscalía y la Policía Judicial verás que Criminalística puede emitir un informe pericial durante una investigación previa. Ese manual describe un procedimiento: explica la práctica, pero no reemplaza el artículo 511.</p>
+    <p><strong>Para qué lo usas:</strong> para saber qué debes pedir a la autoridad antes de iniciar un peritaje: la designación formal, el alcance de la pregunta y la fecha de entrega del informe.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1 (designación formal):</strong> durante una investigación, la autoridad designa a un perito por escrito y le entrega las facturas. El perito trabaja dentro de ese encargo y presenta su informe para que después lo sustente en la audiencia.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2 (sin designación):</strong> un contador revisa facturas por iniciativa propia, y luego su trabajo se presenta como pericia. Sin designación y notificación con el cargo, el informe no cumple el numeral 2.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 3 (entrega y sustentación):</strong> el informe se entrega antes de la audiencia y se sustenta en ella, con interrogatorio de las partes. La entrega y la sustentación son actos distintos, y la norma exige los dos.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: iniciar un peritaje sin designación formal.</strong></p>
+      <p><strong>Quién se afecta:</strong> la persona cuyos documentos o declaraciones se analizan sin una designación regular.</p>
+      <p><strong>Qué información cambia:</strong> la validez del informe, que podría no ser valorado.</p>
+      <p><strong>En qué caso:</strong> si el perito entrega un informe sin haber sido notificado con el cargo.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: COIP, art. 511, numerales 2 y 7. Manual de procedimientos investigativos de la Fiscalía y la Policía Judicial, que describe un procedimiento institucional. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <div class="ejercicio">
+    <h3>Ejercicio 1 · Clasifica elementos: obtenido o prueba</h3>
+    <p class="tiempo">Tiempo estimado: 15 minutos · Trabajo individual.</p>
+    <p><strong>Qué practicas:</strong> clasificar cada elemento como elemento obtenido o prueba valorable, y justificar tu decisión con el artículo 454, numeral 1.</p>
+    <p><strong>Enunciado.</strong> En la investigación de una compra pública ficticia se reúnen cuatro elementos: (1) una copia de un contrato, entregada por la entidad y pendiente de presentación en la audiencia; (2) un informe pericial firmado, que aún no se ha sustentado en la audiencia; (3) un testimonio que ya se rindió en la audiencia y se sometió a interrogatorio; (4) un registro de accesos a un sistema, extraído sin registro de quién lo obtuvo.</p>
+    <p><strong>Tareas.</strong> Clasifica cada elemento como elemento obtenido o como prueba valorable, y explica por qué. Después indica qué le falta al elemento (4) para poder usarse.</p>
+    <details>
+      <summary>Ver solución explicada</summary>
+      <div>
+        <p><strong>(1) Elemento obtenido.</strong> La copia todavía no se presentó ni se valoró en la audiencia (art. 454, numeral 1).</p>
+        <p><strong>(2) Elemento obtenido.</strong> El informe está firmado, pero falta su sustentación en la audiencia (art. 511, numeral 7; art. 615, numeral 5).</p>
+        <p><strong>(3) Prueba valorable.</strong> El testimonio se rindió en la audiencia y se sometió a interrogatorio (art. 615, numeral 5).</p>
+        <p><strong>(4) Elemento obtenido.</strong> Le falta la cadena de custodia, que debe registrar la identidad, el estado y el manejo del registro (art. 456).</p>
+        <p><strong>Límite.</strong> Que un elemento sea valorable no significa que sea verdadero. El juez lo valora con los criterios del artículo 457.</p>
+      </div>
+    </details>
+    <div class="entender">
+      <p><strong>Cómo entender este ejercicio.</strong> La clave está en la palabra «valorado». Que un elemento exista o esté firmado no basta. El error más frecuente es tratar un informe firmado como prueba antes de sustentarlo.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <h3>Ejercicio 2 · Revisa un informe pericial contra el contenido mínimo</h3>
+    <p class="tiempo">Tiempo estimado: 15 minutos · Trabajo individual.</p>
+    <p><strong>Qué practicas:</strong> comparar un informe con la lista de contenido mínimo del artículo 511, numeral 6, e identificar qué le falta.</p>
+    <p><strong>Enunciado.</strong> Un informe pericial ficticio sobre facturas de una entidad pública ficticia indica el nombre del perito, su número de acreditación del Consejo de la Judicatura, la fecha de entrega y las conclusiones. No indica el lugar donde se realizó el peritaje, no describe las facturas analizadas y no explica la técnica utilizada. Está firmado.</p>
+    <p><strong>Tareas.</strong> (a) Indica qué contenido mínimo falta. (b) Explica por qué la firma no suple esa falta. (c) Indica qué pedirías a la parte que presentó el informe.</p>
+    <details>
+      <summary>Ver solución explicada</summary>
+      <div>
+        <p><strong>(a)</strong> Faltan el lugar de realización del peritaje, la descripción y el estado de lo peritado (las facturas) y la técnica utilizada (art. 511, numeral 6). Sí constan la identificación del perito y las conclusiones.</p>
+        <p><strong>(b)</strong> La firma es uno de los contenidos, pero no sustituye a los demás. La norma enumera todos los requisitos mínimos.</p>
+        <p><strong>(c)</strong> Pedirías la aclaración o ampliación del informe, que el perito debe presentar cuando los sujetos procesales lo soliciten (art. 511, numeral 5).</p>
+        <p><strong>Límite.</strong> Esta revisión solo examina la forma del informe. No prueba que los datos sean correctos ni que la conclusión sea acertada.</p>
+      </div>
+    </details>
+    <div class="entender">
+      <p><strong>Cómo entender este ejercicio.</strong> Un informe completo en su forma puede ser incorrecto en el fondo, y uno incompleto puede tener algo correcto. Por eso debes decir con claridad qué revisaste y qué no.</p>
+    </div>
+  </div>
+
+  <div class="nota">
+    <p><strong>Relación con el caso conductor.</strong> Distribuidora Costa Demo S.A. es una empresa privada, y sus participantes no son servidores públicos. Por eso, un informe de control de la Contraloría no se aplica a sus compras por esa sola razón. Una pericia contable solo sería necesaria si existe un proceso penal que la requiera. En el caso todavía no hay ese proceso.</p>
+  </div>
+
+  <div class="antes">
+    <p><strong>Cierre.</strong> Repasemos lo esencial. La prueba se convierte en prueba cuando se presenta, se incorpora y se valora en la audiencia. El perito debe estar acreditado y designado, su informe debe tener el contenido mínimo que exige la norma, y debe sustentarlo oralmente, sin que la lectura reemplace su declaración.</p>
+  </div>
+</section>
+
+<!-- ============ PESTAÑA 2 · EVALUACIÓN 01 ============ -->
+<section id="p2" class="pestana" role="tabpanel">
+  <h2>Evaluación de la Sesión 01</h2>
+  <p class="meta">Semana 04 · Sesión 01 · Práctica formativa</p>
+  <p class="aviso-practica">Las respuestas se muestran al elegir. Puedes cambiarlas mientras no hayas respondido todas las preguntas. El puntaje es de práctica y no es la nota oficial.</p>
+  <div class="marcador" id="m-e1" aria-live="polite"></div>
+  <div id="quiz-e1"></div>
+  <div class="botones">
+    <button type="button" class="secundario" data-reiniciar="e1">Reiniciar cuestionario</button>
+  </div>
+</section>
+
+<!-- ============ PESTAÑA 3 · SESIÓN 02 ============ -->
+<section id="p3" class="pestana" role="tabpanel">
+  <h2>Sesión 02 · Control de recursos públicos, informe ante la Fiscalía y pericia judicial</h2>
+  <p class="meta">Semana 04 · Sesión 02 · Unidad 1 · Tema: la ley de la Contraloría, el informe con indicios y la diferencia entre examen especial y pericia judicial</p>
+
+  <div class="antes">
+    <p><strong>Antes de empezar.</strong> Imagina que una entidad pública recibe un informe de la Contraloría que señala indicios de responsabilidad penal de uno de sus servidores. ¿Qué ocurre después? ¿El informe decide algo? ¿Es lo mismo que una pericia contable presentada en un juicio?</p>
+    <p>Al terminar podrás distinguir el control externo, el examen especial y la auditoría forense; explicar qué hace la Fiscalía con un informe que tiene indicios; y diferenciar un examen especial de una pericia contable judicial.</p>
+    <p>Para qué te sirve: identificar qué tipo de documento tienes delante, qué autoridad debe actuar con él y qué valor puede tener dentro de un proceso.</p>
+    <p>Normas que aparecerán: Ley Orgánica de la Contraloría General del Estado, art. 18 y arts. 23.1 a 23.3; COIP, arts. 454, 457, 498, 511, 581.1 y 615.</p>
+  </div>
+
+  <div class="nota">
+    <p><strong>Lo que no desarrollamos.</strong> Esta sesión no explica el Código Orgánico General de Procesos (COGEP) ni el Reglamento del Sistema Pericial Integral. Si los necesitas para un trabajo, consulta su texto oficial antes de citarlos.</p>
+  </div>
+
+  <div class="distribucion">
+    <p><strong>Distribución orientativa de los 120 minutos</strong></p>
+    <ul>
+      <li>Apertura y recuperación de conocimientos previos: 10 minutos.</li>
+      <li>Explicación y ejemplos: 65 minutos.</li>
+      <li>Ejercicio 1, guiado: 15 minutos.</li>
+      <li>Ejercicio 2, guiado: 15 minutos.</li>
+      <li>Cierre, síntesis y preparación para la evaluación: 15 minutos.</li>
+    </ul>
+    <p class="aviso-practica">La evaluación de la sesión se realiza después de este bloque y no tiene un tiempo asignado.</p>
+  </div>
+
+  <h3>1. El control externo y el examen especial</h3>
+  <div class="concepto">
+    <p>La Ley Orgánica de la Contraloría General del Estado (art. 18) establece que el control externo de la Contraloría se ejerce mediante la auditoría gubernamental y el examen especial.</p>
+    <p>El examen especial es una de las formas en que la Contraloría revisa el manejo de recursos del Estado. Su resultado es un informe de control, no una sentencia. Su desarrollo detallado no se incluye en esta semana.</p>
+    <p><strong>Para qué lo usas:</strong> para ubicar un trabajo dentro del control de recursos públicos y saber qué tipo de resultado produce.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1:</strong> la Contraloría revisa las compras de una entidad pública ficticia y emite un informe de examen especial con sus observaciones.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2:</strong> una empresa privada que no maneja recursos públicos. El control de la Contraloría no se aplica a ella por esa sola razón.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 3:</strong> la Contraloría revisa los pagos de una entidad y no encuentra indicios de responsabilidad penal. Su informe sirve para el control, pero no se remite a la Fiscalía por la vía del artículo 23.2, porque esa vía exige indicios de responsabilidad penal.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: presentar un examen especial como si fuera una pericia judicial.</strong></p>
+      <p><strong>Quién se afecta:</strong> el servidor o la entidad examinada, cuyo informe se trataría como una prueba valorada.</p>
+      <p><strong>Qué información cambia:</strong> la fuerza probatoria del documento y la autoridad que debe valorarlo.</p>
+      <p><strong>En qué caso:</strong> si un examen especial se incorpora a un juicio sin que se haya practicado una pericia en los términos del COIP.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: Ley Orgánica de la Contraloría General del Estado, art. 18. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <h3>2. Tres modalidades de auditoría en la ley de la Contraloría</h3>
+  <div class="concepto">
+    <p>La reforma de la Ley de prevención del lavado de activos de 2024 incorporó a la ley de la Contraloría tres modalidades que conviene distinguir.</p>
+    <ul>
+      <li><strong>Auditoría forense preventiva (art. 23.1):</strong> sirve para asesorar a entidades públicas y a entidades privadas que manejen recursos públicos. Puede hacerse en cualquier momento. Sus recomendaciones son de efecto vinculante para la institución auditada, y buscan prevenir posibles delitos contra la eficiencia de la administración pública y otros de naturaleza económica.</li>
+      <li><strong>Auditoría forense detectiva (art. 23.2):</strong> se realiza cuando existen indicios de responsabilidad penal en conductas presuntamente cometidas por servidores y trabajadores de entidades públicas, o por personeros de entidades privadas que manejen recursos públicos. Su objetivo es analizar y obtener elementos suficientes de un posible tipo penal.</li>
+      <li><strong>Auditoría informática (art. 23.3):</strong> revisa los recursos informáticos de entidades públicas y de personas jurídicas privadas que dispongan de recursos públicos. Busca evaluar su eficiencia y efectividad, identificar vulnerabilidades y terminar con un informe de comentarios, conclusiones y recomendaciones.</li>
+    </ul>
+    <p>El informe de auditoría con indicios de responsabilidad penal tiene <strong>valor probatorio</strong> y se remite a la Fiscalía General del Estado. Eso significa que el juez lo valora junto con las demás pruebas, según las reglas del COIP. No reemplaza la audiencia ni decide por sí solo.</p>
+    <p><strong>Para qué lo usas:</strong> para identificar si un trabajo es preventivo o detectivo, y qué debe hacerse con su resultado.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1 (preventiva):</strong> la Contraloría asesora a una entidad sobre sus controles de compras y emite recomendaciones de cumplimiento obligatorio.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2 (detectiva):</strong> hay indicios de que un servidor aprobó pagos sin entregas. El informe analiza esos hechos y se remite a la Fiscalía.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 3 (informática):</strong> una revisión de los sistemas de una entidad detecta una contraseña compartida entre varios usuarios y recomienda corregirla. Es un informe de control de recursos informáticos; por sí mismo no señala a una persona como responsable.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: tratar una recomendación preventiva como una imputación.</strong></p>
+      <p><strong>Quién se afecta:</strong> el servidor cuyo nombre aparece en el informe preventivo.</p>
+      <p><strong>Qué información cambia:</strong> la conclusión del informe, que pasaría de una recomendación de control a una acusación.</p>
+      <p><strong>En qué caso:</strong> si un informe preventivo se presenta como prueba de un delito.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: Ley Orgánica de la Contraloría General del Estado, arts. 23.1, 23.2 y 23.3, incorporados por la reforma de 2024. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <h3>3. El informe con indicios ante la Fiscalía (COIP, art. 581.1)</h3>
+  <div class="concepto">
+    <p>Cuando la Fiscalía recibe un informe de la Contraloría con indicios de responsabilidad penal, por hechos que pueden constituir delitos contra la administración pública, da inicio a las investigaciones.</p>
+    <p>La máxima autoridad de la Fiscalía debe conocer el caso, actuar y estar presente durante toda la investigación. La Contraloría puede ampliar su informe para aportar elementos de convicción suficientes.</p>
+    <p>Aun así, el informe no es requisito de admisibilidad ni de procedibilidad para que la Fiscalía ejerza la acción penal. La Fiscalía puede iniciarla en el momento que considere pertinente, según sus atribuciones.</p>
+    <p><strong>Para qué lo usas:</strong> para anotar qué autoridad recibe el informe y qué puede hacer con él, sin atribuirle una decisión que la norma no le da.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1:</strong> la Contraloría remite un informe con indicios. La Fiscalía inicia la investigación y ordena las diligencias que le corresponden.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2:</strong> un informe de control sin indicios de responsabilidad penal. El artículo 581.1 se refiere a informes con indicios, así que no se activa por ese documento.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 3 (ampliación):</strong> la Contraloría amplía un informe con indicios para aportar elementos de convicción suficientes. La ampliación no cambia la regla: el informe no es requisito de admisibilidad ni de procedibilidad.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: afirmar que sin informe de la Contraloría no puede haber investigación.</strong></p>
+      <p><strong>Quién se afecta:</strong> la víctima o la entidad afectada, que podría perder una denuncia válida.</p>
+      <p><strong>Qué información cambia:</strong> la posibilidad de iniciar la investigación por otra vía.</p>
+      <p><strong>En qué caso:</strong> si se rechaza una denuncia solo porque no existe un informe de la Contraloría.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: COIP, art. 581.1. Los ejemplos son didácticos.</p></div>
+  </div>
+
+  <h3>4. Examen especial y pericia contable judicial</h3>
+  <div class="concepto">
+    <p>Ambos trabajos analizan documentos y registros, pero no cumplen la misma función. El examen especial es parte del control de la Contraloría sobre los recursos del Estado. La pericia contable judicial es una prueba que se produce dentro de un proceso y que debe sustentarse en la audiencia.</p>
+    <p>La tabla siguiente compara los dos trabajos con las normas que estudiamos en esta semana.</p>
+    <div class="tabla-wrap">
+      <table>
+        <caption>Tabla 2. Examen especial frente a pericia contable judicial</caption>
+        <tr><th>Criterio</th><th>Examen especial (control)</th><th>Pericia contable judicial (proceso penal)</th></tr>
+        <tr><td>Normas principales</td><td>Ley Orgánica de la Contraloría, art. 18 y arts. 23.1 a 23.3</td><td>COIP, arts. 454, 457, 498, 511 y 615</td></tr>
+        <tr><td>Quién la realiza</td><td>La Contraloría General del Estado</td><td>Un perito designado y notificado con el cargo, acreditado por el Consejo de la Judicatura</td></tr>
+        <tr><td>Resultado</td><td>Informe de control; si hay indicios de responsabilidad penal, se remite a la Fiscalía</td><td>Informe pericial con el contenido mínimo del artículo 511, numeral 6</td></tr>
+        <tr><td>Qué decide</td><td>No decide responsabilidades; el informe orienta</td><td>No decide responsabilidades; el juez valora la pericia junto con las demás pruebas</td></tr>
+        <tr><td>Sustentación</td><td>Sigue el procedimiento de control de la Contraloría (no se desarrolla en esta semana)</td><td>Oral, en la audiencia, con interrogatorio de las partes (art. 511, numeral 7; art. 615, numeral 5)</td></tr>
+      </table>
+    </div>
+    <p><strong>Para qué lo usas:</strong> para saber qué documento corresponde producir según quién lo pide y en qué etapa está el caso.</p>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 1 (examen especial):</strong> la Contraloría pide a una entidad ficticia la documentación de sus pagos para evaluar el manejo de recursos públicos. El resultado es un informe de control.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 2 (pericia judicial):</strong> en un proceso penal ficticio, el juez designa a un perito para que explique los pagos ante el tribunal. El resultado es un informe pericial que debe sustentarse en la audiencia.</p>
+    </div>
+    <div class="ejemplo">
+      <p><strong>Ejemplo 3 (mismos documentos, otra función):</strong> las mismas facturas pueden servir a la Contraloría en un examen especial y a un perito en un proceso. La diferencia está en quién las analiza, con qué encargo y ante qué autoridad se presenta el resultado.</p>
+    </div>
+    <div class="error">
+      <p><strong>Escenario de error: presentar un examen especial en un juicio como si fuera la pericia del COIP.</strong></p>
+      <p><strong>Quién se afecta:</strong> la persona señalada, cuyo caso se apoyaría en un documento sin la sustentación que exige la norma.</p>
+      <p><strong>Qué información cambia:</strong> el valor que el juez puede dar al documento y la posibilidad de la defensa de interrogar a su autor.</p>
+      <p><strong>En qué caso:</strong> si el informe de control se presenta sin que su autor comparezca a la audiencia.</p>
+    </div>
+    <div class="origen"><p>Origen de los datos: Ley Orgánica de la Contraloría General del Estado, art. 18 y arts. 23.1 a 23.3; COIP, arts. 454, 457, 498, 511, 581.1 y 615.</p></div>
+  </div>
+
+  <div class="ejemplo">
+    <p><strong>Ejemplo independiente.</strong> No forma parte del caso conductor. La Entidad Pública Demo Valle Verde (ficticia) recibe un informe de la Contraloría con indicios de responsabilidad penal contra un servidor. El informe se remite a la Fiscalía, que inicia la investigación. Si el juez lo requiere, un perito acreditado de la entidad presentará después una pericia en el proceso.</p>
+    <p class="origen">Propósito: distinguir el informe de control de la pericia procesal.</p>
+  </div>
+
+  <div class="ejercicio">
+    <h3>Ejercicio 1 · Elige el documento y la autoridad</h3>
+    <p class="tiempo">Tiempo estimado: 15 minutos · Trabajo individual.</p>
+    <p><strong>Qué practicas:</strong> identificar qué documento corresponde a cada situación y qué autoridad debe actuar con él.</p>
+    <p><strong>Enunciado.</strong> Tres situaciones ficticias: (A) la Contraloría revisa las compras de una entidad pública y encuentra indicios de un pago sin entrega; (B) un juez ordena que un perito analice las facturas de esa misma entidad para un juicio; (C) una empresa privada que no maneja recursos públicos pide a un consultor un análisis de sus procesos internos.</p>
+    <p><strong>Tareas.</strong> Para cada situación indica el documento que corresponde, la autoridad que lo produce o recibe, y la norma que lo sustenta.</p>
+    <details>
+      <summary>Ver solución explicada</summary>
+      <div>
+        <p><strong>(A)</strong> Examen especial de la Contraloría (art. 18). Con indicios de responsabilidad penal, el informe se remite a la Fiscalía, que inicia la investigación (COIP, art. 581.1).</p>
+        <p><strong>(B)</strong> Pericia contable en el proceso. El perito debe estar designado, notificado con el cargo y acreditado (COIP, art. 511, numerales 1 y 2). Su informe debe tener el contenido mínimo y ser sustentado (numerales 6 y 7).</p>
+        <p><strong>(C)</strong> No corresponde un examen especial por esa sola razón, porque la empresa no maneja recursos públicos según el enunciado. Es un trabajo de asesoría privada, no de control estatal ni de pericia procesal.</p>
+        <p><strong>Límite.</strong> El enunciado no dice si la entidad de (A) o (B) tiene un proceso abierto. La vía que corresponde depende de esa información.</p>
+      </div>
+    </details>
+    <div class="entender">
+      <p><strong>Cómo entender este ejercicio.</strong> La misma entidad puede dar origen a un examen de control y a una pericia en un proceso, pero son documentos distintos con autoridades distintas. El error más frecuente es llamar «auditoría» a todo y no preguntar quién lo recibe.</p>
+    </div>
+  </div>
+
+  <div class="ejercicio">
+    <h3>Ejercicio 2 · Ordena los pasos desde el informe hasta la decisión</h3>
+    <p class="tiempo">Tiempo estimado: 15 minutos · Trabajo individual.</p>
+    <p><strong>Qué practicas:</strong> ordenar el recorrido de un informe con indicios y distinguir qué paso produce una decisión y cuál solo orienta o inicia.</p>
+    <p><strong>Enunciado.</strong> Un informe de auditoría forense detectiva de la Contraloría, con indicios de responsabilidad penal, llega a la Fiscalía. Los pasos posibles son: (1) la Fiscalía inicia la investigación; (2) la Contraloría remite el informe; (3) el juez valora las pruebas en la audiencia; (4) la Contraloría emite el informe con indicios.</p>
+    <p><strong>Tareas.</strong> Ordena los pasos y explica cuál de ellos decide la responsabilidad penal.</p>
+    <details>
+      <summary>Ver solución explicada</summary>
+      <div>
+        <p><strong>Orden:</strong> (4), (2), (1), (3).</p>
+        <p><strong>Decisión:</strong> el paso (3) decide la responsabilidad, dentro del proceso, después de valorar las pruebas. Los pasos (4), (2) y (1) orientan o inician la investigación; no deciden.</p>
+        <p><strong>Límite.</strong> El informe con indicios tiene valor probatorio (art. 23.2), pero ese valor se establece al valorarlo junto con las demás pruebas (COIP, arts. 454 y 457).</p>
+      </div>
+    </details>
+    <div class="entender">
+      <p><strong>Cómo entender este ejercicio.</strong> Un informe puede tener un papel importante en el proceso y, aun así, no decidir nada. La dificultad es separar «tiene valor» de «decide». Confundir ambas ideas es el error más frecuente.</p>
+    </div>
+  </div>
+
+  <div class="antes">
+    <p><strong>Cierre.</strong> Repasemos. La Contraloría controla los recursos públicos y, cuando hay indicios de responsabilidad penal, remite su informe a la Fiscalía. Ese informe no es requisito para que la Fiscalía actúe ni decide la responsabilidad. La pericia contable judicial se produce dentro del proceso, con un perito acreditado que sustenta su informe. Ninguno de los dos documentos equivale a una sentencia.</p>
+  </div>
+</section>
+
+<!-- ============ PESTAÑA 4 · EVALUACIÓN 02 ============ -->
+<section id="p4" class="pestana" role="tabpanel">
+  <h2>Evaluación de la Sesión 02</h2>
+  <p class="meta">Semana 04 · Sesión 02 · Práctica formativa</p>
+  <p class="aviso-practica">Las respuestas se muestran al elegir. Puedes cambiarlas mientras no hayas respondido todas las preguntas. El puntaje es de práctica y no es la nota oficial.</p>
+  <div class="marcador" id="m-e2" aria-live="polite"></div>
+  <div id="quiz-e2"></div>
+  <div class="botones">
+    <button type="button" class="secundario" data-reiniciar="e2">Reiniciar cuestionario</button>
+  </div>
+</section>
+
+<!-- ============ PESTAÑA 5 · REFLEXIÓN ============ -->
+<section id="p5" class="pestana" role="tabpanel">
+  <h2>Reflexión</h2>
+  <p class="meta">Semana 04 · Cuatro reflexiones, sin respuesta correcta ni calificación</p>
+  <div class="refl">
+    <h4>La firma que no alcanza</h4>
+    <p>Un compañero te pide que firmes un informe que no preparaste, porque «ya está revisado». Al leerlo, notas que faltan partes importantes del análisis.</p>
+    <p class="pregunta-r">Pregunta de reflexión: ¿qué responsabilidad tienes al firmar un trabajo que no puedes sustentar?</p>
+  </div>
+  <div class="refl">
+    <h4>Una recomendación que se volvió acusación</h4>
+    <p>Un informe de control recomienda cambiar un procedimiento de compras. Alguien lo comenta como si ya probara el delito de un funcionario.</p>
+    <p class="pregunta-r">Pregunta de reflexión: ¿por qué es importante distinguir una recomendación de control de una imputación penal?</p>
+  </div>
+  <div class="refl">
+    <h4>La cita que nadie comprobó</h4>
+    <p>Un estudiante copia de un blog el texto de un artículo de ley, sin revisar el texto oficial. Le parece correcto porque el texto suena convincente.</p>
+    <p class="pregunta-r">Pregunta de reflexión: ¿qué diferencia hay entre una explicación útil y una fuente que puede citarse como fundamento?</p>
+  </div>
+  <div class="refl">
+    <h4>Hablar en la audiencia</h4>
+    <p>Un perito se prepara para declarar y, mientras espera, escucha lo que dice un testigo. Piensa que así podrá responder mejor.</p>
+    <p class="pregunta-r">Pregunta de reflexión: ¿por qué la ley impide que peritos y testigos se comuniquen antes de declarar?</p>
+  </div>
+</section>
+
+<!-- ============ PESTAÑA 6 · ACTIVIDAD CON IA ============ -->
+<section id="p6" class="pestana" role="tabpanel">
+  <h2>Actividad con IA · Revisa los requisitos del perito</h2>
+  <p class="meta">Actividad individual · Tiempo estimado: 30 minutos fuera de clase</p>
+  <div class="ej-ia">
+    <div class="ejercicio">
+      <h3>Pasos</h3>
+      <ol>
+        <li><strong>Trabajo inicial.</strong> Antes de consultar la IA, escribe con tus palabras los requisitos que debe cumplir un perito según el artículo 511 del COIP, y un ejemplo de informe que no los cumpla.</li>
+        <li><strong>Prompt para copiar:</strong> «Explica los requisitos que el artículo 511 del COIP exige a un perito y el contenido mínimo de su informe. Usa solo el texto del artículo 511 y no incluyas penas.»</li>
+        <li><strong>Contraste.</strong> Compara la respuesta con la Tabla 1 de la Sesión 01 y con el texto del artículo 511.</li>
+        <li><strong>Verificación.</strong> Comprueba en el texto oficial del COIP al menos una afirmación de la respuesta.</li>
+        <li><strong>Justificación.</strong> Escribe en media página qué aceptaste, qué corregiste y qué rechazaste de la respuesta, y por qué.</li>
+      </ol>
+      <h4>Lista de autoevaluación</h4>
+      <ul>
+        <li>Distingo la acreditación del perito de su designación y notificación.</li>
+        <li>No acepté una norma sin comprobar su texto oficial.</li>
+        <li>Comprobé al menos una afirmación en una fuente oficial.</li>
+        <li>Justifiqué cada cambio con el texto de la norma.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="origen">La respuesta de la IA no es una fuente normativa. La fuente es el texto oficial.</p>
+</section>
+
+<!-- ============ PESTAÑA 7 · BIBLIOGRAFÍA ============ -->
+<section id="p7" class="pestana" role="tabpanel">
+  <h2>Bibliografía</h2>
+  <p class="meta">Referencias en APA 7, en orden alfabético</p>
+  <div class="bib">
+    <p>Asamblea Constituyente del Ecuador. (2008). <em>Constitución de la República del Ecuador</em>. Registro Oficial 449.</p>
+    <p>Asamblea Nacional del Ecuador. (2002). <em>Ley Orgánica de la Contraloría General del Estado</em>. Registro Oficial Suplemento 595.</p>
+    <p>Asamblea Nacional del Ecuador. (2024). <em>Ley Orgánica de Prevención, Detección y Combate del Delito de Lavado de Activos y de la Financiación de Otros Delitos</em>. Registro Oficial Suplemento 610.</p>
+    <p>Asamblea Nacional del Ecuador. (s. f.). <em>Código Orgánico Integral Penal</em>.</p>
+  </div>
+  <div class="bib-nota">
+    <p>Se recomienda verificar cada referencia en Google Scholar o en el repositorio institucional antes de citar en trabajos académicos. La vigencia de las normas se comprueba en sus fuentes oficiales; Google Scholar no sustituye esa verificación.</p>
+  </div>
+</section>
+
+</main>
+
+<footer>Auditoría Forense · Semana 04 · Material de práctica formativa</footer>
+
+<script>
+/* ---------- 1. Datos de evaluación (generados desde ej_semana04.json) ---------- */
+const DATOS_E1 = [
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 211 de la Constitución, ¿qué papel cumple la Contraloría General del Estado?",
+  "opciones": [
+   "Dicta sentencias penales contra los servidores públicos.",
+   "Es parte de la Función Judicial y resuelve conflictos entre entidades.",
+   "Es el organismo técnico encargado del control de los recursos estatales.",
+   "Es el órgano que acredita a los peritos ante los jueces."
+  ],
+  "correcta": 2,
+  "retro": [
+   "Las sentencias penales las dicta un juez, no la Contraloría.",
+   "La Contraloría es un organismo de control; no es parte de la Función Judicial ni resuelve conflictos entre entidades.",
+   "Correcto: el artículo 211 la define como organismo técnico de control de los recursos estatales.",
+   "La acreditación de peritos corresponde al Consejo de la Judicatura (COIP, art. 511, numeral 1)."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué debe hacer un perito que tiene una causal de excusa para el caso?",
+  "opciones": [
+   "Excusarse, porque el artículo 511, numeral 3, le obliga a hacerlo cuando exista una causal de excusa.",
+   "Presentar el informe y dejar que el juez decida si la causal le afecta.",
+   "Continuar, porque los peritos no pueden ser recusados ni excusados.",
+   "Excusarse solo si el juez se lo pide por escrito."
+  ],
+  "correcta": 0,
+  "retro": [
+   "Correcto: la obligación de excusarse nace de la causal, no de una orden posterior.",
+   "Presentar el informe sin excusarse no cumple el numeral 3 de la norma.",
+   "Esta respuesta confunde dos cosas: que el perito no puede ser recusado (numeral 4) no lo libera de excusarse cuando exista una causal (numeral 3).",
+   "La obligación no depende de una orden escrita del juez; nace de la causal."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 498 del COIP, ¿cuáles son los medios de prueba que se estudian en esta sesión?",
+  "opciones": [
+   "Solo el documento.",
+   "El testimonio y la confesión.",
+   "La opinión del auditor y el informe de gerencia.",
+   "El documento, el testimonio y la pericia."
+  ],
+  "correcta": 3,
+  "retro": [
+   "El artículo 498 enumera más de un medio; el documento es solo uno de ellos.",
+   "La lista del artículo 498 que se estudió no incluye la confesión.",
+   "La opinión del auditor no es un medio de prueba listado en el artículo 498.",
+   "Correcto: el artículo 498 enumera el documento, el testimonio y la pericia."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué establece el artículo 453 del COIP sobre la finalidad de la prueba?",
+  "opciones": [
+   "Asegurar que el procesado pague una multa sin juicio.",
+   "Llevar al convencimiento de los hechos y de la responsabilidad.",
+   "Reemplazar la audiencia de juicio por un informe escrito.",
+   "Demostrar el patrimonio personal del auditor."
+  ],
+  "correcta": 1,
+  "retro": [
+   "La prueba no sirve para imponer multas sin juicio.",
+   "Correcto: la prueba busca el convencimiento sobre los hechos y la responsabilidad.",
+   "El informe no reemplaza la audiencia; el perito debe comparecer y sustentarlo (art. 511, numeral 7).",
+   "El patrimonio del auditor no es objeto de la prueba en este contexto."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 454, numeral 1, ¿cuándo una pericia u otro elemento alcanza valor de prueba?",
+  "opciones": [
+   "Cuando se presenta, se incorpora y se valora en la audiencia de juicio.",
+   "Cuando lo firma el gerente de la empresa examinada.",
+   "Cuando se obtiene en la investigación, sin más requisitos.",
+   "Cuando el perito lo entrega al auditor."
+  ],
+  "correcta": 0,
+  "retro": [
+   "Correcto: el texto exige presentación, incorporación y valoración en juicio.",
+   "La firma del gerente no es el criterio del artículo 454.",
+   "Obtener un elemento no basta: debe presentarse, incorporarse y valorarse.",
+   "La entrega al auditor no convierte el informe en prueba valorada."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué exige el artículo 456 del COIP sobre la cadena de custodia?",
+  "opciones": [
+   "Que el elemento se guarde en la caja fuerte del perito.",
+   "Que el elemento sea destruido después de la pericia.",
+   "Que quede documentada la identidad y el estado del elemento, y las personas que lo manejaron, con sus cambios.",
+   "Que solo el juez pueda tocar los elementos."
+  ],
+  "correcta": 2,
+  "retro": [
+   "Guardar el elemento no basta: la cadena registra cada manejo y cada persona que intervino.",
+   "Destruir el elemento no es un requisito de la cadena de custodia.",
+   "Correcto: la cadena de custodia documenta identidad, estado y manejo del elemento.",
+   "La cadena de custodia no restringe el manejo al juez; registra quién manejó el elemento y cuándo."
+  ]
+ },
+ {
+  "badge": "Análisis",
+  "pregunta": "Caso didáctico: en un proceso penal ficticio sobre una compra pública, el informe de un perito no indica el lugar y la fecha de realización del peritaje ni la técnica utilizada. ¿Qué afirmación es correcta?",
+  "opciones": [
+   "El informe es válido porque lo firma el perito.",
+   "El informe no cumple el contenido mínimo del artículo 511, numeral 6, porque faltan el lugar y la fecha del peritaje y la técnica utilizada.",
+   "El informe es válido porque la Fiscalía designó al perito.",
+   "El informe prueba la responsabilidad penal del gerente."
+  ],
+  "correcta": 1,
+  "retro": [
+   "La firma es un requisito, pero no es el único: el artículo 511, numeral 6, exige otros contenidos mínimos.",
+   "Correcto: el lugar, la fecha, la técnica y otros elementos son contenido mínimo del informe.",
+   "La designación del perito no suple el contenido mínimo del informe.",
+   "Un informe pericial no prueba por sí solo responsabilidad penal; debe valorarse junto con las demás pruebas."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 511, numeral 1, ¿qué debe cumplir una persona para actuar como perito?",
+  "opciones": [
+   "Tener cualquier título, sin más requisitos.",
+   "Ser amigo de la víctima.",
+   "Haber sido parte del proceso.",
+   "Ser profesional experto en el área, acreditado por el Consejo de la Judicatura."
+  ],
+  "correcta": 3,
+  "retro": [
+   "No basta cualquier título: el texto exige experticia en la materia y acreditación.",
+   "La amistad con la víctima no es un requisito; además generaría una causal de excusa.",
+   "Haber sido parte del proceso no habilita a una persona como perito.",
+   "Correcto: el perito debe ser experto y estar acreditado por el Consejo de la Judicatura."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 511, numeral 4, ¿qué ocurre si el perito tiene una inhabilidad o una excusa debidamente comprobada?",
+  "opciones": [
+   "El informe no tendrá valor alguno.",
+   "El perito puede seguir actuando sin cambios.",
+   "Solo el juez puede corregir el informe, sin efecto para el proceso.",
+   "El perito queda libre de toda responsabilidad."
+  ],
+  "correcta": 0,
+  "retro": [
+   "Correcto: el informe no tiene valor si el perito tiene inhabilidad o excusa debidamente comprobada.",
+   "Una inhabilidad o excusa comprobada impide dar valor al informe.",
+   "La corrección del juez no subsana la inhabilidad del perito.",
+   "La norma no declara libre de responsabilidad al perito; el efecto que señala es sobre el informe."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 615, numeral 2, ¿qué ocurre con los peritos y testigos durante la audiencia de juicio?",
+  "opciones": [
+   "Pueden llegar después de terminada la práctica de la prueba.",
+   "No deben declarar bajo juramento.",
+   "Deben prestar juramento de decir la verdad y ser interrogados.",
+   "Pueden leer sus informes en lugar de declarar."
+  ],
+  "correcta": 2,
+  "retro": [
+   "Deben estar presentes para la práctica de la prueba que les corresponde.",
+   "Esta opción invierte la norma: los peritos y testigos deben prestar juramento de decir la verdad.",
+   "Correcto: el juramento de decir la verdad y el interrogatorio son reglas del juicio.",
+   "La lectura no sustituye la declaración personal (art. 615, numeral 3)."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 615, numeral 8, ¿qué no pueden hacer los peritos y testigos antes de declarar?",
+  "opciones": [
+   "Presentar documentos de apoyo.",
+   "Comunicarse entre sí ni ver u oír lo que ocurre en la audiencia.",
+   "Entregar sus informes a la defensa.",
+   "Declarar en un lugar distinto a la sala."
+  ],
+  "correcta": 1,
+  "retro": [
+   "Esta opción no está prohibida por el numeral 8.",
+   "Correcto: la norma busca que la declaración no se contamine por lo que otros dicen o por lo que ocurre en la audiencia.",
+   "La entrega de informes a las partes sigue las reglas de la prueba; el numeral 8 no la prohíbe.",
+   "El numeral 8 no regula el lugar de la declaración."
+  ]
+ },
+ {
+  "badge": "Análisis",
+  "pregunta": "Caso didáctico: el perito Pericial Demo (ficticio) presenta su informe. En la audiencia, la defensa pregunta por qué no describió la técnica utilizada, y la Fiscalía solicita que se lea el informe en lugar de que el perito declare. ¿Qué afirmación es correcta?",
+  "opciones": [
+   "La lectura es válida porque el informe está escrito.",
+   "La defensa no puede preguntar por la técnica utilizada.",
+   "La técnica no importa porque el informe tiene firma.",
+   "La defensa puede interrogar sobre la técnica; el perito debe exponer su informe y declarar personalmente, y el informe debe contener la técnica utilizada (art. 511, numeral 6; art. 615, numerales 3 y 5)."
+  ],
+  "correcta": 3,
+  "retro": [
+   "La declaración personal no puede sustituirse por la lectura (art. 615, numeral 3).",
+   "El interrogatorio es parte de la práctica de la prueba (art. 615, numeral 5).",
+   "La firma no suple el contenido mínimo del informe.",
+   "Correcto: el perito expone, se le interroga y el informe debe contener la técnica utilizada."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué diferencia hay entre un perito y un testigo en el proceso penal?",
+  "opciones": [
+   "El perito aporta un análisis técnico especializado; el testigo declara lo que percibió directamente.",
+   "Son lo mismo.",
+   "El testigo debe estar acreditado por el Consejo de la Judicatura.",
+   "El perito solo declara durante la investigación."
+  ],
+  "correcta": 0,
+  "retro": [
+   "Correcto: el perito aporta conocimiento técnico; el testigo aporta lo que percibió. El COIP los trata por separado (art. 615).",
+   "No son lo mismo: el COIP los regula en reglas distintas.",
+   "La acreditación del Consejo de la Judicatura es un requisito del perito (art. 511, numeral 1).",
+   "El perito también declara en la audiencia de juicio (art. 615, numerales 2 y 5)."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "En la audiencia, tras la exposición del perito sobre su informe, ¿en qué orden se le interroga?",
+  "opciones": [
+   "Primero el juez y después la parte que ofreció la prueba.",
+   "Primero la parte que ofreció la prueba y después las demás partes (art. 615, numeral 5).",
+   "Solo la defensa, porque es la parte afectada por el informe.",
+   "No se le interroga; basta con la lectura de su informe."
+  ],
+  "correcta": 1,
+  "retro": [
+   "La norma indica que el interrogatorio empieza con la parte que ofreció la prueba.",
+   "Correcto: el artículo 615, numeral 5, fija ese orden.",
+   "La regla no se basa en quién resulta afectado, sino en quién ofreció la prueba.",
+   "La declaración personal no puede sustituirse por la lectura del informe (art. 615, numeral 3)."
+  ]
+ },
+ {
+  "badge": "Análisis",
+  "pregunta": "Caso didáctico: Distribuidora Costa Demo S.A. es una empresa privada. Un informe interno sobre sus compras se presenta ante un juez como si fuera un informe pericial. ¿Qué debe verificarse?",
+  "opciones": [
+   "Solo que lo firme el gerente.",
+   "Que el informe tenga valor de sentencia.",
+   "Que el autor esté acreditado por el Consejo de la Judicatura y que el contenido cumpla el artículo 511, numeral 6; si no, no puede tratarse como informe pericial en los términos del COIP.",
+   "Que haya sido aprobado por la contadora general."
+  ],
+  "correcta": 2,
+  "retro": [
+   "La firma del gerente no acredita la condición de perito.",
+   "Un informe no tiene valor de sentencia; el juez decide.",
+   "Correcto: la calidad de perito y el contenido mínimo son requisitos del artículo 511.",
+   "La aprobación interna no acredita al perito ni el contenido del informe."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según lo estudiado, ¿qué afirmación sobre el momento de intervención del perito es correcta?",
+  "opciones": [
+   "El COIP fija siempre el día exacto de la designación.",
+   "El perito interviene solo después de la sentencia.",
+   "El perito puede actuar sin designación si lo considera útil.",
+   "Debe ser designado y notificado con el cargo (art. 511, numeral 2) y su informe se sustenta en juicio; la norma no fija un único momento de intervención."
+  ],
+  "correcta": 3,
+  "retro": [
+   "La norma no fija un día exacto; esta opción afirma más de lo que la norma dice.",
+   "El perito puede intervenir antes de la sentencia; la sustentación en juicio es posterior a su informe.",
+   "El artículo 511, numeral 2, exige designación y notificación con el cargo.",
+   "Correcto: se exige designación formal y sustentación en juicio, sin fijar un momento único."
+  ]
+ }
+];
+const DATOS_E2 = [
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 18 de la Ley Orgánica de la Contraloría General del Estado, ¿qué incluye el control externo?",
+  "opciones": [
+   "Solo las auditorías financieras de empresas privadas.",
+   "Solo la pericia judicial.",
+   "La auditoría gubernamental y el examen especial.",
+   "La emisión de sentencias de responsabilidad."
+  ],
+  "correcta": 2,
+  "retro": [
+   "El control externo de la Contraloría se refiere a la gestión pública, no solo a empresas privadas.",
+   "La pericia judicial pertenece al proceso judicial; no es el contenido del control externo del artículo 18.",
+   "Correcto: el artículo 18 identifica la auditoría gubernamental y el examen especial.",
+   "La Contraloría no dicta sentencias; remite indicios a la Fiscalía."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 23.2 de la Ley Orgánica de la Contraloría, incorporado por la reforma de la Ley de 2024, ¿cuándo se realiza la auditoría forense detectiva?",
+  "opciones": [
+   "Cuando existen indicios de responsabilidad penal, para analizar y obtener elementos de un posible tipo penal.",
+   "Solo como asesoría preventiva, sin relación con delitos.",
+   "Cuando reemplaza una investigación fiscal ya concluida.",
+   "Solo en entidades privadas que no manejan recursos públicos."
+  ],
+  "correcta": 0,
+  "retro": [
+   "Correcto: la auditoría detectiva se activa ante indicios de responsabilidad penal y busca elementos de un posible tipo penal.",
+   "La asesoría preventiva corresponde al artículo 23.1, no al 23.2.",
+   "La auditoría no reemplaza la investigación fiscal; la remite a la Fiscalía.",
+   "La norma se refiere a entidades públicas y a personeros de entidades privadas que manejen recursos públicos."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué caracteriza a la auditoría forense preventiva del artículo 23.1 de la Ley Orgánica de la Contraloría?",
+  "opciones": [
+   "Solo puede realizarse una vez al año.",
+   "Solo puede realizarse después de una sentencia.",
+   "Es sancionatoria y no contiene recomendaciones.",
+   "Puede realizarse en cualquier momento para asesorar y prevenir, y sus recomendaciones tienen efecto vinculante para la institución auditada."
+  ],
+  "correcta": 3,
+  "retro": [
+   "El texto no fija una periodicidad anual para esta auditoría.",
+   "Su finalidad es preventiva; no depende de una sentencia.",
+   "El artículo 23.1 contempla recomendaciones de efecto vinculante, no solo sanciones.",
+   "Correcto: puede hacerse en cualquier momento y sus recomendaciones son vinculantes para la institución auditada."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué significa que el informe de auditoría con indicios de responsabilidad penal 'tendrá valor probatorio' (art. 23.2)?",
+  "opciones": [
+   "Que el juez debe condenar a la persona señalada.",
+   "Que es un elemento que se presenta y se valora en el proceso conforme al COIP; no reemplaza ni dispensa la valoración judicial.",
+   "Que el informe ya es una sentencia.",
+   "Que el informe no puede ser discutido por las partes."
+  ],
+  "correcta": 1,
+  "retro": [
+   "La condena la decide el juez, no el informe.",
+   "Correcto: el informe es prueba para valorar en el proceso, junto con las demás pruebas (COIP, arts. 454 y 457).",
+   "Un informe de auditoría no es una sentencia.",
+   "Las partes pueden discutir el informe en el proceso."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 581.1 del COIP, ¿qué ocurre cuando la Fiscalía conoce un informe de la Contraloría con indicios de responsabilidad penal?",
+  "opciones": [
+   "Dará inicio a las investigaciones por hechos que pueden constituir delitos contra la administración pública.",
+   "Debe archivar el caso.",
+   "Necesita una sentencia previa para investigar.",
+   "Se convierte en una acusación particular."
+  ],
+  "correcta": 0,
+  "retro": [
+   "Correcto: el artículo 581.1 señala que la Fiscalía dará inicio a las investigaciones.",
+   "El artículo no ordena el archivo; ordena iniciar la investigación.",
+   "El artículo no exige sentencia previa.",
+   "El informe no convierte a nadie en acusador particular."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 581.1 del COIP, ¿el informe de la Contraloría es requisito de admisibilidad o de procedibilidad para ejercer la acción penal?",
+  "opciones": [
+   "Sí, siempre.",
+   "Solo cuando el delito es peculado.",
+   "En ningún caso.",
+   "Solo cuando la víctima lo solicita."
+  ],
+  "correcta": 2,
+  "retro": [
+   "El texto dice lo contrario: el informe no es requisito de admisibilidad ni de procedibilidad.",
+   "El texto no distingue por tipo de delito en ese punto.",
+   "Correcto: el artículo señala que en ningún caso el informe es requisito de admisibilidad o procedibilidad.",
+   "La solicitud de la víctima no cambia esa regla."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 23.3 de la Ley Orgánica de la Contraloría, ¿a qué se enfoca la auditoría informática?",
+  "opciones": [
+   "Reemplaza la pericia informática en los procesos judiciales.",
+   "Se enfoca en el control de los recursos informáticos para evaluar su eficiencia y efectividad.",
+   "Se aplica solo a bancos privados.",
+   "Sanciona a los funcionarios por fallas de sistemas."
+  ],
+  "correcta": 1,
+  "retro": [
+   "La auditoría informática es de control; no reemplaza la pericia judicial.",
+   "Correcto: el artículo 23.3 la define como control de recursos informáticos, con evaluación de eficiencia y efectividad.",
+   "La norma no la limita a bancos privados; se refiere a entidades del sector público y personas jurídicas que dispongan de recursos públicos.",
+   "La auditoría informática concluye con un informe de comentarios, conclusiones y recomendaciones, no con sanciones."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué diferencia es clave entre el examen especial de la Contraloría y la pericia contable judicial?",
+  "opciones": [
+   "Son idénticos.",
+   "El examen especial lo practica el juez; la pericia la realiza la Contraloría.",
+   "La pericia judicial no requiere acreditación.",
+   "El examen especial se practica en el control de los recursos estatales por la Contraloría; la pericia judicial se practica dentro de un proceso, con perito acreditado que sustenta su informe en audiencia."
+  ],
+  "correcta": 3,
+  "retro": [
+   "Tienen finalidades y marcos distintos: el control de recursos estatales y la prueba en un proceso.",
+   "Los roles están invertidos: el juez no practica el examen especial y la pericia no la realiza la Contraloría.",
+   "La pericia judicial exige perito acreditado (art. 511, numeral 1).",
+   "Correcto: el control de la Contraloría y la pericia procesal tienen distinto origen, sujetos y efectos."
+  ]
+ },
+ {
+  "badge": "Análisis",
+  "pregunta": "Caso didáctico: la Entidad Pública Demo Valle Verde (ficticia) recibe un informe de la Contraloría con indicios de responsabilidad penal contra un servidor. ¿Qué afirmación es correcta?",
+  "opciones": [
+   "La Contraloría condena al servidor.",
+   "La Contraloría remite el informe a la Fiscalía; la Fiscalía inicia la investigación (art. 581.1). El informe orienta, pero la responsabilidad la decide el juez.",
+   "El informe se archiva por no ser una sentencia.",
+   "El servidor queda declarado culpable con la recepción del informe."
+  ],
+  "correcta": 1,
+  "retro": [
+   "La Contraloría no condena; su informe con indicios se dirige a la Fiscalía.",
+   "Correcto: el orden es informe, Fiscalía, investigación y, al final, decisión judicial.",
+   "El archivo no es la consecuencia que señala el artículo 581.1.",
+   "Recibir un informe no declara culpable a nadie."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 23.2 de la Ley Orgánica de la Contraloría, ¿quiénes pueden ser objeto de la auditoría forense detectiva?",
+  "opciones": [
+   "Servidores y trabajadores de entidades públicas, y personeros de entidades de derecho privado que manejen recursos públicos.",
+   "Cualquier persona natural sin vínculo con recursos públicos.",
+   "Solo los jueces.",
+   "Solo los proveedores extranjeros."
+  ],
+  "correcta": 0,
+  "retro": [
+   "Correcto: la norma se refiere a servidores y trabajadores públicos y a personeros de entidades privadas que manejen recursos públicos.",
+   "Una persona sin vínculo con recursos públicos no es sujeto de esa auditoría por esa norma.",
+   "La norma no se limita a los jueces.",
+   "La norma no se refiere a proveedores extranjeros."
+  ]
+ },
+ {
+  "badge": "Análisis",
+  "pregunta": "Caso didáctico: un perito no acreditado por el Consejo de la Judicatura presenta un informe en un proceso. ¿Qué afirmación es correcta según el artículo 511, numerales 1 y 4?",
+  "opciones": [
+   "El informe es válido porque su autor es contador.",
+   "Solo vale si el juez lo acepta sin verificar.",
+   "Debe verificarse la acreditación, que es requisito del numeral 1; y si el perito tiene una inhabilidad o excusa comprobada, el informe no tiene valor (numeral 4).",
+   "La acreditación es opcional."
+  ],
+  "correcta": 2,
+  "retro": [
+   "Ser contador no basta: el numeral 1 exige acreditación del Consejo de la Judicatura.",
+   "La aceptación del juez no suple el requisito de acreditación.",
+   "Correcto: la acreditación es requisito, y la inhabilidad o excusa comprobada le quita valor al informe.",
+   "La acreditación no es opcional según el numeral 1."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 500 del COIP, ¿cómo se trata el contenido digital como prueba?",
+  "opciones": [
+   "No puede ser prueba.",
+   "Se analiza y recupera con técnicas digitales forenses.",
+   "Solo se acepta impreso, sin análisis.",
+   "Se valora solo si lo firma el gerente."
+  ],
+  "correcta": 1,
+  "retro": [
+   "El contenido digital sí puede ser prueba, según el artículo 500.",
+   "Correcto: el artículo 500 regula el contenido digital y las técnicas digitales forenses.",
+   "La impresión no reemplaza el análisis forense del contenido.",
+   "La firma del gerente no es el criterio de valoración del contenido digital."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "¿Qué artículo del COIP establece criterios de valoración como legalidad, autenticidad, cadena de custodia y aceptación científica y técnica?",
+  "opciones": [
+   "Artículo 453.",
+   "Artículo 511.",
+   "Artículo 615.",
+   "Artículo 457."
+  ],
+  "correcta": 3,
+  "retro": [
+   "El artículo 453 trata la finalidad de la prueba.",
+   "El artículo 511 trata las reglas del perito.",
+   "El artículo 615 trata la práctica de pruebas en juicio.",
+   "Correcto: el artículo 457 enumera los criterios de valoración."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Según el artículo 581.1 del COIP, ¿qué puede hacer la Contraloría con un informe que tiene indicios de responsabilidad penal?",
+  "opciones": [
+   "Ampliarlo para aportar elementos de convicción suficientes que nutran el ejercicio de la acción penal.",
+   "Retirarlo del proceso una vez que la Fiscalía lo recibe.",
+   "Emitir la sentencia que decide la responsabilidad penal.",
+   "Reemplazarlo por la declaración de un testigo."
+  ],
+  "correcta": 0,
+  "retro": [
+   "Correcto: el artículo permite ampliar el informe para aportar elementos de convicción suficientes.",
+   "El artículo no prevé que la Contraloría retire el informe; lo que establece es que puede ampliarlo.",
+   "La Contraloría no dicta sentencias; el informe no decide la responsabilidad penal.",
+   "Un testigo no sustituye al informe; la norma regula su ampliación, no su reemplazo."
+  ]
+ },
+ {
+  "badge": "Análisis",
+  "pregunta": "Caso didáctico: Distribuidora Costa Demo S.A. es privada y no maneja recursos públicos. Un gerente pregunta si la Contraloría debe hacerle un examen especial. ¿Qué respuesta es correcta?",
+  "opciones": [
+   "Sí, por ser una empresa.",
+   "Sí, porque tiene proveedores.",
+   "No necesariamente: la auditoría detectiva del artículo 23.2 se refiere a entidades públicas y a personeros de entidades privadas que manejen recursos públicos. Si Costa Demo no los maneja, ese control no se aplica por esa vía; una pericia solo sería posible dentro de un proceso.",
+   "Sí, si la auditoría es preventiva por una denuncia."
+  ],
+  "correcta": 2,
+  "retro": [
+   "Ser empresa no basta: el control se refiere al manejo de recursos públicos.",
+   "Tener proveedores no es el criterio de la norma.",
+   "Correcto: el alcance depende de manejar recursos públicos; la pericia requiere un proceso.",
+   "Una denuncia no cambia el alcance subjetivo de la norma; el artículo 23.1 también se refiere a entidades que manejen recursos públicos."
+  ]
+ },
+ {
+  "badge": "Teórica",
+  "pregunta": "Un manual institucional de la Fiscalía y la Policía Judicial describe que Criminalística puede emitir un informe pericial dentro de una investigación previa. ¿Cómo debes entender ese documento?",
+  "opciones": [
+   "Como una norma con fuerza de ley.",
+   "Como una sentencia.",
+   "Como una prueba plena.",
+   "Como un procedimiento institucional que ilustra el momento de la pericia; no es una norma del COIP ni reemplaza el artículo 511."
+  ],
+  "correcta": 3,
+  "retro": [
+   "El manual no es una ley; es un documento de procedimiento institucional.",
+   "Una sentencia la dicta un juez; el manual no es una sentencia.",
+   "Un informe pericial no es prueba plena por sí mismo; debe valorarse.",
+   "Correcto: el manual sirve para entender la práctica institucional, pero la norma aplicable es el COIP."
+  ]
+ }
+];
+
+/* ---------- 2. Navegación entre pestañas ---------- */
+(function navegacion(){
+  const botones = document.querySelectorAll('nav button[data-p]');
+  function mostrar(id){
+    document.querySelectorAll('section.pestana').forEach(s => s.classList.toggle('activa', s.id === id));
+    botones.forEach(b => b.setAttribute('aria-selected', b.dataset.p === id ? 'true' : 'false'));
+    window.scrollTo({top: 0, behavior: 'auto'});
+  }
+  botones.forEach(b => {
+    b.addEventListener('click', () => mostrar(b.dataset.p));
+    b.addEventListener('keydown', e => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      const arr = Array.from(botones);
+      const i = arr.indexOf(b);
+      const j = (i + (e.key === 'ArrowRight' ? 1 : -1) + arr.length) % arr.length;
+      arr[j].focus(); arr[j].click();
+    });
+  });
+})();
+
+/* ---------- 3. Motor de evaluación de práctica ---------- */
+function montarEvaluacion(contId, marcadorId, datos, clave){
+  const cont = document.getElementById(contId);
+  const marc = document.getElementById(marcadorId);
+  const n = datos.length;
+  let resp = new Array(n).fill(null);
+
+  function fmt(x){ return x.toFixed(2).replace('.', ','); }
+
+  function pintarMarcador(){
+    const pendientes = resp.filter(r => r === null).length;
+    const aciertos = datos.reduce((s, p, i) => s + (resp[i] === p.correcta ? 1 : 0), 0);
+    const respondidas = n - pendientes;
+    const nota = (aciertos / n) * 10;
+    const pct = (aciertos / n) * 100;
+    marc.innerHTML =
+      '<div class="fila">' +
+      '<span>Pendientes: ' + pendientes + ' de ' + n + '</span>' +
+      '<span>Aciertos: ' + aciertos + '</span>' +
+      '<span>Calificación: ' + fmt(nota) + ' / 10</span>' +
+      '<span>Porcentaje: ' + fmt(pct) + ' %</span>' +
+      '</div>' +
+      '<div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="' + n + '" aria-valuenow="' + respondidas + '" aria-label="Progreso de respuestas"><div style="width:' + ((respondidas / n) * 100).toFixed(1) + '%"></div></div>';
+    return {pendientes, aciertos};
+  }
+
+  function pintarFinal(){
+    const {pendientes, aciertos} = pintarMarcador();
+    let final = cont.querySelector('.final');
+    if (!final){ final = document.createElement('div'); final.className = 'final'; final.setAttribute('role','status'); cont.appendChild(final); }
+    if (pendientes > 0){ final.classList.remove('visible'); final.innerHTML = ''; return; }
+    const errores = n - aciertos;
+    let html = '<p><strong>Ha respondido todas las preguntas.</strong> Obtuvo ' + aciertos + ' aciertos de ' + n + '.</p>';
+    if (errores > 0){
+      html += '<p>Revisa las retroalimentaciones de las preguntas incorrectas antes de intentarlo nuevamente.</p>' +
+              '<div class="botones"><button type="button" data-intentar="' + clave + '">Intentar nuevamente</button></div>';
+    } else {
+      html += '<p>Respondió correctamente todas las preguntas.</p>';
+    }
+    final.innerHTML = html;
+    final.classList.add('visible');
+  }
+
+  function elegir(i, k){
+    if (resp.every(r => r !== null)) return;
+    if (resp[i] !== null) return;
+    resp[i] = k;
+    const p = datos[i];
+    const grupo = cont.querySelectorAll('[data-q="' + i + '"]');
+    grupo.forEach((lab, idx) => {
+      lab.classList.toggle('correcta', idx === p.correcta);
+      lab.classList.toggle('incorrecta', idx === k && idx !== p.correcta);
+    });
+    const ret = document.getElementById(clave + '-r' + i);
+    const ok = (k === p.correcta);
+    ret.className = 'retro ' + (ok ? 'ok' : 'no');
+    ret.textContent = (ok ? 'CORRECTO. ' : 'Incorrecto. ') + p.retro[k];
+    cont.querySelectorAll('input[name^="' + clave + '-q' + i + '"]').forEach(x => x.disabled = true);
+    pintarFinal();
+  }
+
+  function reiniciar(){
+    resp = new Array(n).fill(null);
+    cont.querySelectorAll('input').forEach(x => { x.checked = false; x.disabled = false; });
+    cont.querySelectorAll('.opcion').forEach(l => l.classList.remove('correcta','incorrecta'));
+    cont.querySelectorAll('.retro').forEach(r => { r.className = 'retro'; r.textContent = ''; });
+    pintarFinal();
+  }
+
+  cont.innerHTML = '';
+  datos.forEach((p, i) => {
+    const art = document.createElement('article');
+    art.className = 'pregunta';
+    const letras = ['a', 'b', 'c', 'd'];
+    const opcionesHtml = p.opciones.map((o, k) =>
+      '<label class="opcion" data-q="' + i + '"><input type="radio" name="' + clave + '-q' + i + '" value="' + k + '"><span><strong>' + letras[k] + ')</strong> ' + o + '</span></label>'
+    ).join('');
+    art.innerHTML =
+      '<p><span class="insignia' + (p.badge === 'Análisis' ? ' analisis' : '') + '">[' + p.badge + ']</span> <span class="meta">Pregunta ' + (i + 1) + ' de ' + n + '</span></p>' +
+      '<p class="enun">' + p.pregunta + '</p>' +
+      '<div class="opciones" role="radiogroup" aria-label="Opciones de la pregunta ' + (i + 1) + '">' + opcionesHtml + '</div>' +
+      '<div class="retro" id="' + clave + '-r' + i + '" aria-live="polite"></div>';
+    cont.appendChild(art);
+  });
+  cont.addEventListener('change', e => {
+    if (e.target.matches('input[type="radio"]')){
+      const i = Number(e.target.name.split('-q')[1]);
+      elegir(i, Number(e.target.value));
+    }
+  });
+  const btnReinicio = document.querySelector('[data-reiniciar="' + clave + '"]');
+  if (btnReinicio) btnReinicio.addEventListener('click', reiniciar);
+  cont.addEventListener('click', e => {
+    const b = e.target.closest('[data-intentar]');
+    if (b){ reiniciar(); }
+  });
+  pintarMarcador();
+}
+
+/* ---------- 4. Arranque ---------- */
+montarEvaluacion('quiz-e1', 'm-e1', DATOS_E1, 'e1');
+montarEvaluacion('quiz-e2', 'm-e2', DATOS_E2, 'e2');
+</script>
+</body>
+</html>
